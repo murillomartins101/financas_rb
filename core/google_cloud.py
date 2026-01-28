@@ -29,19 +29,23 @@ class GoogleCloudManager:
             True se inicializado com sucesso
         """
         try:
-            # Método 1: Usar secrets.toml (recomendado para Streamlit Cloud)
-            if "google_credentials" in st.secrets:
-                creds_dict = dict(st.secrets["google_credentials"])
-                self.credentials = Credentials.from_service_account_info(
-                    creds_dict,
+            # Obter diretório base do projeto
+            base_dir = Path(__file__).parent.parent
+            json_path = base_dir / "google_credentials.json"
+            
+            # Método 1: Usar arquivo JSON local (prioridade para desenvolvimento local)
+            if json_path.exists():
+                self.credentials = Credentials.from_service_account_file(
+                    str(json_path),
                     scopes=['https://www.googleapis.com/auth/spreadsheets',
                            'https://www.googleapis.com/auth/drive']
                 )
             
-            # Método 2: Usar arquivo JSON local
-            elif os.path.exists("google_credentials.json"):
-                self.credentials = Credentials.from_service_account_file(
-                    "google_credentials.json",
+            # Método 2: Usar secrets.toml (recomendado para Streamlit Cloud)
+            elif "google_credentials" in st.secrets:
+                creds_dict = dict(st.secrets["google_credentials"])
+                self.credentials = Credentials.from_service_account_info(
+                    creds_dict,
                     scopes=['https://www.googleapis.com/auth/spreadsheets',
                            'https://www.googleapis.com/auth/drive']
                 )
