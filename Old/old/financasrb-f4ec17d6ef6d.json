@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "financasrb",
+  "private_key_id": "f4ec17d6ef6df017c1d572ac214987ca32cde374",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCQyoJWxkzax3V3\nuefQjWwDaxMkHXbBYFfMj0ZXRXhu+lgo/ntK79ODm0Lhtw7KBeUsvox6yJr10xEu\nOtm8nJ8GFeJHNemdtZy+Y5J6p1Dz2fLJzJ9QXXvyBq9gEwAkdYsXHnVr+QkcM6mi\ndP5diyf82m/5VRUpVpFB1FWmeFS3XLSFGl9aBGNM6InPd1mkn26SplodpvHld+I8\nYHqiB8ko2X2WMIadMea/719n1szCTVAiDyE/vmc+vZ+pw9nMFQ8yWGTOXlqStAat\neJm+z109pBeuFu8masxpdrWi2xUGdFZYquuGP8L5z9qt+1hUL5m/nLrV9d8hgd3F\n+mqAumXfAgMBAAECggEAJRYh5X0cgWtWjMiq9nHK6WM7P2RmnyiAxK4sK71pGC/6\ndeGdDfg4+rxBmNQNLzTsWxYhoG+StYWPIILFc7jASMxBLdFC2fkDQYb6pX0G0LcS\nJ5tIcUrIrRkGQbsMLcqHym+sTvA2Y6ld+XUzFB3JK8x9ouUmqvR3918eYynuNRrg\nmSXXyqrngYL7LvtvwCKjhaxZXaFR5xeSodG+EPPeeUE5vzMto37bOakXVCkXqvZ0\nU/k8atj1JG3TnkNAAEv1rqAVdotN7b0Jr2aFbtKUTByLPRoHgngUvpHLfYUJjSne\n4SHOh/SlBZb4JTfbMgq3Gk2JeMcAXbb2UCAu/Dv3tQKBgQDHG1IiCsIWNbTpn5sE\n94omf6TR1Oa+o//TZVy5AEQt6DkH7g+0eeDdA74NIPiBiSEs45kOagVqKK77YNRl\nw9KR6hfs+MbOX61YOxqIb/zmV9AirB3icfUVgz4dLOfdUg8vWsw/sTl4dn1KDAKj\njYR78F9u6vyEszCDotni4IIYhQKBgQC6Kf2pklmUAYvecH9YiImQJIPuDNJa8jSl\n433Kmo8tR8DX/Alp/ZwyLcW+3uhsNYC6GAtsAo+ADN6MjdK9jbF5YHkTeEdUy00l\nl07rPtMG4YuHHnymnInLwHnSBLVK3w0x/LU7yKdjc4vRnoRsbhC0VnwraC4IjGq+\nVprMOxaEEwKBgQCRVSrteEbVaVxljz/bL0ji8xb+ptXK3/CTgJBe5Yfernw6gpVq\nGfB9wwaNlLxv6QWTO4p0EAVlyM545OQEaByir2nJaonLB+GC3plub7f89qoRNOsX\naDEKA+Np7mZMkWJOIYunDhiyCmNHkl62vUywHvO6BcJOpnFKFKvQRCoR9QKBgHWm\nHdmxVI0VoRgVTlVcDFucyAeD8Nhq4tzHdPK6VKuQAg49CJIEJVcM2EB0zLu94Dk7\nAtTilV+eQnLfGgSS7ErBriKgy6uJw5pzEfvXOzPJDA17Ndlxah/q5tHUCeJkLgme\nI8bBWw+dsQnrPNLth/7//P7NmvHqE3dwcemJmgQjAoGAP8CErs6VvmKRnEXNNQH+\n9iNS8pKKRJEQJN6p8eR5m/p/iGqiWsH2SuLNAUqseLxrkkLI+JFX2e6GRzznk6qd\nqX7AIqQM7wEhbWHJShg56EZ3ZcFcGauA1cinbjSCiIkc4lQQtc3NdX/4HiNOUZ9s\nXlsy+B47U6opT019or2fHNI=\n-----END PRIVATE KEY-----\n",
+  "client_email": "rockbuzz-sheets@financasrb.iam.gserviceaccount.com",
+  "client_id": "110472149351249807961",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/rockbuzz-sheets%40financasrb.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
