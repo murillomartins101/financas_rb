@@ -84,7 +84,6 @@ def render_sidebar():
         menu_pages = {
             "🏠 Home": "Home",
             "🎸 Shows": "Shows",
-            "💰 Transações": "Transacoes",
             "📊 Relatórios & Projeções": "Relatorios",
             "📝 Cadastro de Registros": "Cadastros"
         }
