@@ -121,7 +121,7 @@ def main():
         padding: 1.5rem;
         margin-bottom: 1rem;
     ">
-        <h3 style="color: {DARK_THEME['text_primary']}; margin-bottom: 1rem;">Valor Efetivo por Show</h3>
+        <h3 style="color: {DARK_THEME['text_primary']}; margin-bottom: 1rem;">Resultados</h3>
     """, unsafe_allow_html=True)
     
     col_valor1, col_valor2, col_valor3 = st.columns(3)

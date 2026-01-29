@@ -547,7 +547,7 @@ def main():
             border-left: 4px solid {DARK_THEME['accent_green']};
         ">
             <div style="color: {DARK_THEME['text_secondary']}; font-size: 0.8rem; text-transform: uppercase;">
-                VALOR BRUTO (SHOWS)
+                VALOR BRUTO
             </div>
             <div style="color: {DARK_THEME['accent_green']}; font-size: 1.6rem; font-weight: 700; margin: 8px 0;">
                 R$ {valor_bruto_shows:,.2f}
@@ -590,7 +590,7 @@ def main():
             border-left: 4px solid {valor_color};
         ">
             <div style="color: {DARK_THEME['text_secondary']}; font-size: 0.8rem; text-transform: uppercase;">
-                VALOR EFETIVO POR SHOW
+                SALDO LÍQUIDO
             </div>
             <div style="color: {valor_color}; font-size: 1.6rem; font-weight: 700; margin: 8px 0;">
                 R$ {valor_efetivo:,.2f}

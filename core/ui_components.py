@@ -145,7 +145,7 @@ def render_sidebar():
                 f"<div style='background-color: #4a2020; padding: 8px; border-radius: 4px; "
                 f"border-left: 3px solid #f85149;'>"
                 f"<span style='color: #f85149;'>Desconectado</span><br/>"
-                f"<small style='color: #8b949e;'>Fonte: Excel local</small></div>",
+                f"<small style='color: #8b949e;'>Fonte: Google Sheets</small></div>",
                 unsafe_allow_html=True
             )
         
