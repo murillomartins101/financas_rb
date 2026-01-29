@@ -58,7 +58,7 @@ def create_sparkline(values, color='#58a6ff', height=50):
     
     return fig
 
-def render_kpi_card_with_sparkline(title, value, sparkline_data, delta=None, delta_text=None, color='#58a6ff', prefix='R$ '):
+def render_kpi_card_with_sparkline(title, value, sparkline_data, delta=None, delta_text=None, color='#58a6ff', prefix='R$ ', comparison_period=None):
     """Renderiza um card de KPI com sparkline integrado"""
     
     delta_html = ""
@@ -66,7 +66,11 @@ def render_kpi_card_with_sparkline(title, value, sparkline_data, delta=None, del
         delta_color = DARK_THEME['accent_green'] if delta >= 0 else DARK_THEME['accent_red']
         delta_symbol = "+" if delta >= 0 else ""
         delta_display = delta_text if delta_text else f"{delta_symbol}{delta:.1f}%"
-        delta_html = f'<div style="color: {delta_color}; font-size: 0.85rem; margin-top: 4px;">{delta_display}</div>'
+        comparison_text = comparison_period if comparison_period else "em relacao ao mes anterior"
+        delta_html = f'''<div style="color: {delta_color}; font-size: 0.85rem; margin-top: 4px;">
+            {delta_display}
+            <span style="color: {DARK_THEME['text_secondary']}; font-size: 0.75rem;"> {comparison_text}</span>
+        </div>'''
     
     if isinstance(value, (int, float)):
         if abs(value) >= 1000000:
@@ -504,6 +508,98 @@ def main():
             prefix='',
             color=DARK_THEME['accent_purple']
         )
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # KPI de Valor Efetivo por Show
+    valor_bruto_shows = 0
+    custos_operacionais = 0
+    
+    # Calcular valor bruto dos shows (receitas de shows)
+    if not transactions_df.empty:
+        receitas_shows = transactions_df[
+            (transactions_df['tipo'] == 'ENTRADA') & 
+            (transactions_df['payment_status'] == 'PAGO')
+        ]
+        if not receitas_shows.empty:
+            valor_bruto_shows = receitas_shows['valor'].sum()
+        
+        # Calcular custos operacionais (despesas pagas)
+        despesas = transactions_df[
+            (transactions_df['tipo'] == 'SAIDA') & 
+            (transactions_df['payment_status'] == 'PAGO')
+        ]
+        if not despesas.empty:
+            custos_operacionais = despesas['valor'].sum()
+    
+    valor_efetivo = valor_bruto_shows - custos_operacionais
+    percentual_retido = (valor_efetivo / valor_bruto_shows * 100) if valor_bruto_shows > 0 else 0
+    
+    col_valor1, col_valor2, col_valor3 = st.columns(3)
+    
+    with col_valor1:
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(145deg, {DARK_THEME['card_bg']} 0%, #21262d 100%);
+            border: 1px solid {DARK_THEME['card_border']};
+            border-radius: 12px;
+            padding: 1.2rem;
+            border-left: 4px solid {DARK_THEME['accent_green']};
+        ">
+            <div style="color: {DARK_THEME['text_secondary']}; font-size: 0.8rem; text-transform: uppercase;">
+                VALOR BRUTO (SHOWS)
+            </div>
+            <div style="color: {DARK_THEME['accent_green']}; font-size: 1.6rem; font-weight: 700; margin: 8px 0;">
+                R$ {valor_bruto_shows:,.2f}
+            </div>
+            <div style="color: {DARK_THEME['text_secondary']}; font-size: 0.75rem;">
+                Total de receitas recebidas
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_valor2:
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(145deg, {DARK_THEME['card_bg']} 0%, #21262d 100%);
+            border: 1px solid {DARK_THEME['card_border']};
+            border-radius: 12px;
+            padding: 1.2rem;
+            border-left: 4px solid {DARK_THEME['accent_red']};
+        ">
+            <div style="color: {DARK_THEME['text_secondary']}; font-size: 0.8rem; text-transform: uppercase;">
+                CUSTOS OPERACIONAIS
+            </div>
+            <div style="color: {DARK_THEME['accent_red']}; font-size: 1.6rem; font-weight: 700; margin: 8px 0;">
+                R$ {custos_operacionais:,.2f}
+            </div>
+            <div style="color: {DARK_THEME['text_secondary']}; font-size: 0.75rem;">
+                Equipe, equipamentos, posts patrocinados, etc.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_valor3:
+        valor_color = DARK_THEME['accent_cyan'] if valor_efetivo >= 0 else DARK_THEME['accent_red']
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(145deg, {DARK_THEME['card_bg']} 0%, #21262d 100%);
+            border: 1px solid {DARK_THEME['card_border']};
+            border-radius: 12px;
+            padding: 1.2rem;
+            border-left: 4px solid {valor_color};
+        ">
+            <div style="color: {DARK_THEME['text_secondary']}; font-size: 0.8rem; text-transform: uppercase;">
+                VALOR EFETIVO POR SHOW
+            </div>
+            <div style="color: {valor_color}; font-size: 1.6rem; font-weight: 700; margin: 8px 0;">
+                R$ {valor_efetivo:,.2f}
+            </div>
+            <div style="color: {DARK_THEME['text_secondary']}; font-size: 0.75rem;">
+                {percentual_retido:.1f}% do valor bruto retido
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     

@@ -126,31 +126,49 @@ def render_sidebar():
         
         st.divider()
         
-        # Status do sistema
-        col_status1, col_status2 = st.columns(2)
+        # Status da conexao com Google Sheets
+        st.markdown("### Conexao")
         
-        with col_status1:
-            if st.session_state.get("data_source"):
-                st.caption(f"{st.session_state.data_source}")
+        from core.google_cloud import google_cloud_manager
+        connection_status = google_cloud_manager.get_connection_status()
         
-        with col_status2:
-            if st.session_state.get("last_cache_update"):
-                last_update = st.session_state.last_cache_update
-                if isinstance(last_update, str):
-                    from datetime import datetime
-                    last_update = datetime.fromisoformat(last_update)
-                st.caption(f"{last_update.strftime('%H:%M')}")
+        if connection_status['connected']:
+            st.markdown(
+                f"<div style='background-color: #1a472a; padding: 8px; border-radius: 4px; "
+                f"border-left: 3px solid #3fb950;'>"
+                f"<span style='color: #3fb950;'>Conectado</span><br/>"
+                f"<small style='color: #8b949e;'>Fonte: Google Sheets</small></div>",
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f"<div style='background-color: #4a2020; padding: 8px; border-radius: 4px; "
+                f"border-left: 3px solid #f85149;'>"
+                f"<span style='color: #f85149;'>Desconectado</span><br/>"
+                f"<small style='color: #8b949e;'>Fonte: Excel local</small></div>",
+                unsafe_allow_html=True
+            )
         
-        # Botão para atualizar
+        # Botao de teste de conexao
+        if st.button("Testar Conexao", use_container_width=True, type="secondary"):
+            with st.spinner("Testando conexao..."):
+                test_result = google_cloud_manager.test_connection_live()
+                if test_result['success']:
+                    st.success(test_result['message'])
+                    if test_result['worksheets']:
+                        st.caption(f"Abas: {', '.join(test_result['worksheets'][:3])}...")
+                else:
+                    st.error(test_result['message'])
+        
+        st.divider()
+        
+        # Botão para atualizar dados
         if st.button("Atualizar Dados", use_container_width=True):
             from core.data_loader import data_loader
             data_loader.load_all_data(force_refresh=True)
             st.rerun()
         
-        # Status do sistema
-        if st.session_state.get("data_source"):
-            st.caption(f"Fonte: {st.session_state.data_source}")
-        
+        # Ultima atualizacao
         if st.session_state.get("last_cache_update"):
             last_update = st.session_state.last_cache_update
             if isinstance(last_update, str):
