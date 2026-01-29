@@ -613,12 +613,15 @@ def main():
             border-radius: 12px;
             padding: 1rem;
         ">
+            <h4 style="color: {DARK_THEME['text_primary']}; margin: 0 0 0.5rem 0; font-size: 14px;">
+                Evolucao das Receitas
+            </h4>
         """, unsafe_allow_html=True)
         
         if not monthly_data.empty:
             fig = create_area_chart(
                 monthly_data, 'mes', 'ENTRADA',
-                'Evolucao das Receitas',
+                '',
                 color=DARK_THEME['accent_green']
             )
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -635,12 +638,15 @@ def main():
             border-radius: 12px;
             padding: 1rem;
         ">
+            <h4 style="color: {DARK_THEME['text_primary']}; margin: 0 0 0.5rem 0; font-size: 14px;">
+                Evolucao das Despesas
+            </h4>
         """, unsafe_allow_html=True)
         
         if not monthly_data.empty:
             fig = create_area_chart(
                 monthly_data, 'mes', 'SAIDA',
-                'Evolucao das Despesas',
+                '',
                 color=DARK_THEME['accent_red']
             )
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -661,6 +667,9 @@ def main():
             border-radius: 12px;
             padding: 1rem;
         ">
+            <h4 style="color: {DARK_THEME['text_primary']}; margin: 0 0 0.5rem 0; font-size: 14px;">
+                Distribuicao de Despesas
+            </h4>
         """, unsafe_allow_html=True)
         
         category_dist = get_category_distribution(transactions_df, 'SAIDA')
@@ -670,7 +679,7 @@ def main():
             fig = create_pie_chart(
                 top_categories['categoria'].tolist(),
                 top_categories['valor'].tolist(),
-                'Distribuicao de Despesas'
+                ''
             )
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         else:
@@ -686,12 +695,15 @@ def main():
             border-radius: 12px;
             padding: 1rem;
         ">
+            <h4 style="color: {DARK_THEME['text_primary']}; margin: 0 0 0.5rem 0; font-size: 14px;">
+                Receitas vs Despesas
+            </h4>
         """, unsafe_allow_html=True)
         
         if not monthly_data.empty and len(monthly_data) > 1:
             fig = create_multi_line_chart(
                 monthly_data, 'mes', ['ENTRADA', 'SAIDA'],
-                'Receitas vs Despesas',
+                '',
                 colors=[DARK_THEME['accent_green'], DARK_THEME['accent_red']]
             )
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -708,12 +720,15 @@ def main():
             border-radius: 12px;
             padding: 1rem;
         ">
+            <h4 style="color: {DARK_THEME['text_primary']}; margin: 0 0 0.5rem 0; font-size: 14px;">
+                Saude Financeira
+            </h4>
         """, unsafe_allow_html=True)
         
         fig = create_gauge_chart(
             min(margem, 100) if margem > 0 else 0,
             100,
-            'Saude Financeira',
+            '',
             color=DARK_THEME['accent_cyan']
         )
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})

@@ -341,15 +341,54 @@ def show_despesas_detalhadas():
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Análise por categoria com visual melhorado
-    if 'categoria' in despesas.columns:
-        col_chart1, col_chart2 = st.columns(2)
+    col_chart1, col_chart2 = st.columns(2)
+    
+    with col_chart1:
+        st.markdown("""
+        <div style="
+            background: linear-gradient(145deg, #161b22 0%, #21262d 100%);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        ">
+            <h4 style="color: #c9d1d9; margin: 0 0 0.5rem 0; font-size: 14px;">
+                Despesas por Subcategoria
+            </h4>
+        """, unsafe_allow_html=True)
         
-        despesas_por_categoria = despesas.groupby('categoria')['valor'].sum().sort_values(ascending=False)
-        
-        if not despesas_por_categoria.empty:
-            with col_chart1:
-                # Gráfico de barras horizontal com tema dark
+        if 'subcategoria' in despesas.columns:
+            despesas_por_subcategoria = despesas.groupby('subcategoria')['valor'].sum().sort_values(ascending=False).head(10)
+            
+            if not despesas_por_subcategoria.empty:
+                fig_bar = go.Figure(go.Bar(
+                    x=despesas_por_subcategoria.values,
+                    y=despesas_por_subcategoria.index,
+                    orientation='h',
+                    marker=dict(
+                        color=despesas_por_subcategoria.values,
+                        colorscale='Reds',
+                        showscale=False
+                    ),
+                    text=[f'R$ {v:,.2f}' for v in despesas_por_subcategoria.values],
+                    textposition='auto'
+                ))
+                fig_bar.update_layout(
+                    template='plotly_dark',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    height=350,
+                    yaxis=dict(autorange="reversed"),
+                    xaxis_title="Valor (R$)",
+                    yaxis_title=""
+                )
+                st.plotly_chart(fig_bar, use_container_width=True)
+            else:
+                st.info("Sem dados de subcategoria")
+        elif 'categoria' in despesas.columns:
+            despesas_por_categoria = despesas.groupby('categoria')['valor'].sum().sort_values(ascending=False).head(10)
+            
+            if not despesas_por_categoria.empty:
                 fig_bar = go.Figure(go.Bar(
                     x=despesas_por_categoria.values,
                     y=despesas_por_categoria.index,
@@ -363,20 +402,41 @@ def show_despesas_detalhadas():
                     textposition='auto'
                 ))
                 fig_bar.update_layout(
-                    title="Despesas por Categoria",
                     template='plotly_dark',
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    height=400,
+                    height=350,
                     yaxis=dict(autorange="reversed"),
                     xaxis_title="Valor (R$)",
                     yaxis_title=""
                 )
                 st.plotly_chart(fig_bar, use_container_width=True)
+            else:
+                st.info("Sem dados de categoria")
+        else:
+            st.info("Dados de categoria nao disponiveis")
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    with col_chart2:
+        st.markdown("""
+        <div style="
+            background: linear-gradient(145deg, #161b22 0%, #21262d 100%);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        ">
+            <h4 style="color: #c9d1d9; margin: 0 0 0.5rem 0; font-size: 14px;">
+                Distribuicao por Categoria
+            </h4>
+        """, unsafe_allow_html=True)
+        
+        if 'categoria' in despesas.columns:
+            despesas_por_categoria = despesas.groupby('categoria')['valor'].sum().sort_values(ascending=False)
             
-            with col_chart2:
-                # Gráfico de pizza (donut) com tema dark
-                colors = ['#f85149', '#ff7b72', '#ffa198', '#ffcdd2', '#ffebee']
+            if not despesas_por_categoria.empty:
+                colors = ['#f85149', '#ff7b72', '#ffa198', '#d29922', '#a371f7', '#58a6ff', '#39c5cf']
                 fig_pie = go.Figure(go.Pie(
                     values=despesas_por_categoria.values,
                     labels=despesas_por_categoria.index,
@@ -386,45 +446,68 @@ def show_despesas_detalhadas():
                     textposition='outside'
                 ))
                 fig_pie.update_layout(
-                    title="Distribuicao por Categoria",
                     template='plotly_dark',
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    height=400,
+                    height=350,
                     showlegend=False
                 )
                 st.plotly_chart(fig_pie, use_container_width=True)
-    
-    # Evolucao temporal das despesas
-    if 'data' in despesas.columns:
-        despesas_temp = despesas.copy()
-        despesas_temp['data'] = pd.to_datetime(despesas_temp['data'], errors='coerce')
-        despesas_temp = despesas_temp.dropna(subset=['data'])
+            else:
+                st.info("Sem dados de categoria")
+        else:
+            st.info("Dados de categoria nao disponiveis")
         
-        if not despesas_temp.empty:
-            despesas_temp['mes'] = despesas_temp['data'].dt.to_period('M').astype(str)
-            despesas_mensal = despesas_temp.groupby('mes')['valor'].sum().reset_index()
-            
-            fig_line = go.Figure()
-            fig_line.add_trace(go.Scatter(
-                x=despesas_mensal['mes'],
-                y=despesas_mensal['valor'],
-                mode='lines+markers',
-                fill='tozeroy',
-                line=dict(color='#f85149', width=3),
-                marker=dict(size=8, color='#f85149'),
-                fillcolor='rgba(248, 81, 73, 0.2)'
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="
+        background: linear-gradient(145deg, #161b22 0%, #21262d 100%);
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    ">
+        <h4 style="color: #c9d1d9; margin: 0 0 0.5rem 0; font-size: 14px;">
+            Top 10 Shows por Despesas
+        </h4>
+    """, unsafe_allow_html=True)
+    
+    if 'show_id' in despesas.columns or 'descricao' in despesas.columns:
+        group_col = 'show_id' if 'show_id' in despesas.columns else 'descricao'
+        despesas_por_show = despesas.groupby(group_col)['valor'].sum().sort_values(ascending=False).head(10)
+        
+        if not despesas_por_show.empty:
+            fig_shows = go.Figure(go.Bar(
+                x=despesas_por_show.values,
+                y=despesas_por_show.index.astype(str),
+                orientation='h',
+                marker=dict(
+                    color=despesas_por_show.values,
+                    colorscale='Oranges',
+                    showscale=False
+                ),
+                text=[f'R$ {v:,.2f}' for v in despesas_por_show.values],
+                textposition='auto'
             ))
-            fig_line.update_layout(
-                title="Evolucao Mensal das Despesas",
+            fig_shows.update_layout(
                 template='plotly_dark',
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                height=300,
-                xaxis_title="Mes",
-                yaxis_title="Valor (R$)"
+                height=400,
+                yaxis=dict(autorange="reversed"),
+                xaxis_title="Valor (R$)",
+                yaxis_title=""
             )
-            st.plotly_chart(fig_line, use_container_width=True)
+            st.plotly_chart(fig_shows, use_container_width=True)
+        else:
+            st.info("Sem dados de shows")
+    else:
+        st.info("Dados de shows nao disponiveis")
+    
+    st.markdown("</div>", unsafe_allow_html=True)
     
     # Tabela detalhada com estilo
     st.markdown("### Todas as Despesas")
