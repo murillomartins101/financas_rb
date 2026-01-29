@@ -142,11 +142,14 @@ def render_sidebar():
                 unsafe_allow_html=True
             )
         else:
-            error_msg = connection_status.get('error', 'Erro desconhecido')
-            suggestion = connection_status.get('suggestion', '')
+            error_msg = connection_status.get('error') or 'Erro desconhecido'
+            suggestion = connection_status.get('suggestion') or ''
             last_attempt = connection_status.get('last_attempt')
             
-            # Limitar tamanho da mensagem de erro
+            # Garantir que error_msg é string e limitar tamanho
+            if not isinstance(error_msg, str):
+                error_msg = str(error_msg) if error_msg else 'Erro desconhecido'
+            
             if len(error_msg) > 200:
                 error_msg = error_msg[:200] + "..."
             

@@ -362,23 +362,27 @@ class GoogleCloudManager:
                 'suggestion': None
             }
         else:
+            # Garantir que error sempre é uma string válida
+            error_str = str(self._connection_error) if self._connection_error else 'Credenciais não configuradas'
+            
             # Gerar sugestão baseada no erro
             suggestion = None
             if self._connection_error:
-                if "não configuradas" in self._connection_error or "not configured" in self._connection_error.lower():
+                error_lower = error_str.lower()
+                if "não configuradas" in error_str or "not configured" in error_lower:
                     suggestion = "Configure as credenciais em secrets.toml ou google_credentials.json"
-                elif "inválida" in self._connection_error or "invalid" in self._connection_error.lower():
+                elif "inválida" in error_str or "invalid" in error_lower:
                     suggestion = "Verifique o formato das credenciais no secrets.toml.example"
-                elif "Permissão negada" in self._connection_error or "PERMISSION_DENIED" in self._connection_error:
+                elif "Permissão negada" in error_str or "PERMISSION_DENIED" in error_str:
                     suggestion = "Compartilhe a planilha com a Service Account (client_email das credenciais)"
-                elif "não encontrada" in self._connection_error or "not found" in self._connection_error.lower():
+                elif "não encontrada" in error_str or "not found" in error_lower:
                     suggestion = "Verifique se o spreadsheet_id está correto e se a planilha existe"
             
             return {
                 'connected': False,
                 'source': 'Excel local',
                 'spreadsheet_title': None,
-                'error': self._connection_error,
+                'error': error_str,
                 'last_attempt': self._last_attempt_time,
                 'logs': self._initialization_logs,
                 'suggestion': suggestion
