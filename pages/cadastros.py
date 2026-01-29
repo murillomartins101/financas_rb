@@ -19,7 +19,7 @@ from core.constants import (
 
 def main():
     """Página principal de cadastros"""
-    st.title("📝 Cadastro de Registros")
+    st.title("Cadastro de Registros")
     
     if not check_permission("membro"):
         st.error("Você não tem permissão para acessar esta página.")
@@ -29,11 +29,11 @@ def main():
         data = data_loader.load_all_data()
     
     tabs = st.tabs([
-        "🎸 Shows",
-        "💰 Transações",
-        "📊 Regras de Rateio",
-        "👥 Membros",
-        "📦 Merchandising"
+        "Shows",
+        "Transacoes",
+        "Regras de Rateio",
+        "Membros",
+        "Merchandising"
     ])
     
     with tabs[0]:
@@ -54,7 +54,7 @@ def main():
 
 def render_shows_crud(data):
     """CRUD para shows"""
-    st.subheader("🎸 Gerenciar Shows")
+    st.subheader("Gerenciar Shows")
     
     action = st.radio(
         "Ação",
@@ -146,7 +146,7 @@ def render_create_show_form():
             }
             
             validation_msg = get_validation_message('show', show_data)
-            if validation_msg.startswith("✅"):
+            if validation_msg.startswith("OK:"):
                 if data_writer.create_show(show_data):
                     st.rerun()
             else:
@@ -200,7 +200,7 @@ def render_edit_show_form(show_data):
             }
             
             validation_msg = get_validation_message('show', updated_data)
-            if validation_msg.startswith("✅"):
+            if validation_msg.startswith("OK:"):
                 if data_writer.update_show(show_id, updated_data):
                     st.rerun()
             else:
@@ -209,7 +209,7 @@ def render_edit_show_form(show_data):
 
 def render_transactions_crud(data):
     """CRUD para transações"""
-    st.subheader("💰 Gerenciar Transações")
+    st.subheader("Gerenciar Transacoes")
     
     action = st.radio(
         "Ação",
@@ -319,7 +319,7 @@ def render_create_transaction_form(data):
             }
             
             validation_msg = get_validation_message('transaction', trans_data)
-            if validation_msg.startswith("✅"):
+            if validation_msg.startswith("OK:"):
                 if data_writer.create_transaction(trans_data):
                     st.rerun()
             else:
@@ -393,7 +393,7 @@ def render_edit_transaction_form(trans_data, data):
             }
             
             validation_msg = get_validation_message('transaction', updated_data)
-            if validation_msg.startswith("✅"):
+            if validation_msg.startswith("OK:"):
                 if data_writer.update_transaction(trans_id, updated_data):
                     st.rerun()
             else:
@@ -402,7 +402,7 @@ def render_edit_transaction_form(trans_data, data):
 
 def render_payout_rules_crud(data):
     """CRUD para regras de rateio"""
-    st.subheader("📊 Gerenciar Regras de Rateio")
+    st.subheader("Gerenciar Regras de Rateio")
     
     action = st.radio(
         "Ação",
@@ -464,7 +464,7 @@ def render_create_payout_rule_form():
             }
             
             validation_msg = get_validation_message('payout_rule', rule_data)
-            if validation_msg.startswith("✅"):
+            if validation_msg.startswith("OK:"):
                 if data_writer.create_payout_rule(rule_data):
                     st.rerun()
             else:
@@ -473,7 +473,7 @@ def render_create_payout_rule_form():
 
 def render_members_crud(data):
     """CRUD para membros"""
-    st.subheader("👥 Gerenciar Membros")
+    st.subheader("Gerenciar Membros")
     
     action = st.radio(
         "Ação",
@@ -528,7 +528,7 @@ def render_create_member_form():
             }
             
             validation_msg = get_validation_message('member', member_data)
-            if validation_msg.startswith("✅"):
+            if validation_msg.startswith("OK:"):
                 st.success("Membro criado com sucesso!")
                 st.rerun()
             else:
@@ -537,7 +537,7 @@ def render_create_member_form():
 
 def render_merchandising_crud(data):
     """CRUD para merchandising"""
-    st.subheader("📦 Gerenciar Merchandising")
+    st.subheader("Gerenciar Merchandising")
     
     action = st.radio(
         "Ação",
@@ -600,7 +600,7 @@ def render_create_merchandising_form():
             }
             
             validation_msg = get_validation_message('merchandising', merch_data)
-            if validation_msg.startswith("✅"):
+            if validation_msg.startswith("OK:"):
                 st.success("Registro de merchandising criado com sucesso!")
                 st.rerun()
             else:

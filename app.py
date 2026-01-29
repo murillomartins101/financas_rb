@@ -97,14 +97,14 @@ def show_home_page():
 
 def show_basic_dashboard():
     """Dashboard básico como fallback"""
-    st.title("🎸 Rockbuzz Finance - Dashboard")
+    st.title("Rockbuzz Finance - Dashboard")
     
     # Carregar dados
     with st.spinner("Carregando dados..."):
         data = data_loader.load_all_data()
     
     if not data or 'transactions' not in data:
-        st.error("❌ Não foi possível carregar os dados financeiros.")
+        st.error("Nao foi possivel carregar os dados financeiros.")
         return
     
     # KPIs básicos
@@ -174,7 +174,7 @@ def show_cadastros_page():
 
 def show_receitas_vs_despesas():
     """Página de análise Receitas vs Despesas"""
-    st.title("📉 Receitas vs Despesas")
+    st.title("Receitas vs Despesas")
     
     # Carregar dados
     with st.spinner("Carregando dados..."):
@@ -274,7 +274,7 @@ def show_receitas_vs_despesas():
 
 def show_despesas_detalhadas():
     """Página de análise detalhada de despesas"""
-    st.title("💸 Despesas Detalhadas")
+    st.title("Despesas Detalhadas")
     
     # Carregar dados
     with st.spinner("Carregando dados..."):
@@ -355,7 +355,7 @@ def show_despesas_detalhadas():
         st.write(despesas_display)
     
     # Opção para download
-    if st.button("📥 Exportar para Excel"):
+    if st.button("Exportar para Excel"):
         try:
             import io
             buffer = io.BytesIO()
@@ -373,7 +373,7 @@ def show_despesas_detalhadas():
 
 def show_receitas_detalhadas():
     """Página de análise detalhada de receitas"""
-    st.title("💰 Receitas Detalhadas")
+    st.title("Receitas Detalhadas")
     
     # Carregar dados
     with st.spinner("Carregando dados..."):
@@ -477,7 +477,7 @@ def show_receitas_detalhadas():
         st.write(receitas_display)
     
     # Opção para download
-    if st.button("📥 Exportar para Excel"):
+    if st.button("Exportar para Excel"):
         try:
             import io
             buffer = io.BytesIO()

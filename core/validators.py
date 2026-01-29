@@ -435,6 +435,6 @@ def get_validation_message(entity: str, data: Dict[str, Any]) -> str:
         return "Tipo de entidade inválido"
     
     if success:
-        return f"✅ {message}"
+        return f"OK: {message}"
     else:
-        return f"❌ {message}"
+        return f"Erro: {message}"

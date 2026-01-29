@@ -10,7 +10,7 @@ from core.data_loader import data_loader
 
 def main():
     """Página de relatórios"""
-    st.title("📊 Relatórios & Projeções")
+    st.title("Relatorios e Projecoes")
     
     st.info("Funcionalidade em desenvolvimento")
     st.write("Esta página terá relatórios detalhados e projeções futuras.")

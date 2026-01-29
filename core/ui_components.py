@@ -18,7 +18,7 @@ def setup_page_config():
     """
     st.set_page_config(
         page_title="Rockbuzz Finance",
-        page_icon="🎸",
+        page_icon="RF",
         layout="wide",
         initial_sidebar_state="expanded",
         menu_items={
@@ -57,7 +57,7 @@ def render_sidebar():
             try:
                 st.image("assets/logo.png", width=50)
             except:
-                st.markdown("🎸")
+                st.markdown("RF")
         with col2:
             st.markdown("### Rockbuzz Finance")
         
@@ -68,25 +68,24 @@ def render_sidebar():
             user_name = st.session_state.get("user_name", "Usuário")
             user_role = st.session_state.get("user_role", "membro")
             
-            st.markdown(f"**👤 {user_name}**")
+            st.markdown(f"**{user_name}**")
             st.caption(f"_{user_role}_")
             
-            if st.button("🚪 Sair", use_container_width=True, type="secondary"):
+            if st.button("Sair", use_container_width=True, type="secondary"):
                 from core.auth import logout
                 logout()
         
         st.divider()
         
         # Navegação principal
-        st.markdown("### 📋 Navegação")
+        st.markdown("### Navegacao")
         
         # Páginas principais
         menu_pages = {
-            "🏠 Home": "Home",
-            "🎸 Shows": "Shows",
-            "💰 Transações": "Transacoes",
-            "📊 Relatórios & Projeções": "Relatorios",
-            "📝 Cadastro de Registros": "Cadastros"
+            "Home": "Home",
+            "Shows": "Shows",
+            "Relatorios & Projecoes": "Relatorios",
+            "Cadastro de Registros": "Cadastros"
         }
         
         for label, page in menu_pages.items():
@@ -102,12 +101,12 @@ def render_sidebar():
         st.divider()
         
         # Análises rápidas (subpáginas)
-        st.markdown("### 📈 Análises")
+        st.markdown("### Analises")
         
         quick_analyses = {
-            "📉 Receitas vs Despesas": "ReceitasDespesas",
-            "💸 Despesas Detalhadas": "Despesas",
-            "💰 Receitas Detalhadas": "Receitas"
+            "Receitas vs Despesas": "ReceitasDespesas",
+            "Despesas Detalhadas": "Despesas",
+            "Receitas Detalhadas": "Receitas"
         }
         
         for label, page in quick_analyses.items():
@@ -132,7 +131,7 @@ def render_sidebar():
         
         with col_status1:
             if st.session_state.get("data_source"):
-                st.caption(f"📊 {st.session_state.data_source}")
+                st.caption(f"{st.session_state.data_source}")
         
         with col_status2:
             if st.session_state.get("last_cache_update"):
@@ -140,29 +139,29 @@ def render_sidebar():
                 if isinstance(last_update, str):
                     from datetime import datetime
                     last_update = datetime.fromisoformat(last_update)
-                st.caption(f"🔄 {last_update.strftime('%H:%M')}")
+                st.caption(f"{last_update.strftime('%H:%M')}")
         
         # Botão para atualizar
-        if st.button("🔄 Atualizar Dados", use_container_width=True):
+        if st.button("Atualizar Dados", use_container_width=True):
             from core.data_loader import data_loader
             data_loader.load_all_data(force_refresh=True)
             st.rerun()
         
         # Status do sistema
         if st.session_state.get("data_source"):
-            st.caption(f"📊 Fonte: {st.session_state.data_source}")
+            st.caption(f"Fonte: {st.session_state.data_source}")
         
         if st.session_state.get("last_cache_update"):
             last_update = st.session_state.last_cache_update
             if isinstance(last_update, str):
                 last_update = datetime.fromisoformat(last_update)
-            st.caption(f"🔄 Atualizado: {last_update.strftime('%H:%M')}")
+            st.caption(f"Atualizado: {last_update.strftime('%H:%M')}")
 
 def render_global_filters():
     """
     Renderiza filtros globais de período
     """
-    st.subheader("📅 Filtros de Período")
+    st.subheader("Filtros de Periodo")
     
     period_options = {
         "Mês atual": "current_month",
@@ -230,7 +229,7 @@ def render_kpi_card(title: str, value,
                    format_str: str = "{:,.2f}",
                    delta: Optional[float] = None,
                    help_text: str = "",
-                   icon: str = "📊"):
+                   icon: str = ""):
     """
     Renderiza um card de KPI estilizado
     
