@@ -126,8 +126,8 @@ def render_sidebar():
         
         st.divider()
         
-        # Status da conexao com Google Sheets
-        st.markdown("### Conexao")
+        # Status da conexão com Google Sheets
+        st.markdown("### Conexão")
         
         from core.google_cloud import google_cloud_manager
         connection_status = google_cloud_manager.get_connection_status()
@@ -171,9 +171,9 @@ def render_sidebar():
                 # Mostrar link para documentação
                 st.markdown("📖 [Ver guia de configuração](docs/SETUP_GOOGLE_SHEETS.md)")
         
-        # Botao de teste de conexao
-        if st.button("🔄 Testar Conexao", use_container_width=True, type="secondary"):
-            with st.spinner("Testando conexao..."):
+        # Botão de teste de conexão
+        if st.button("🔄 Testar Conexão", use_container_width=True, type="secondary"):
+            with st.spinner("Testando conexão..."):
                 test_result = google_cloud_manager.test_connection_live()
                 if test_result['success']:
                     st.success(test_result['message'])

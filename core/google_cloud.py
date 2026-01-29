@@ -6,13 +6,14 @@ Gerencia autenticação e inicialização de clientes
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 import json
 import os
 from pathlib import Path
 import time
 import logging
 from datetime import datetime
+import re
 
 class GoogleCloudManager:
     """
@@ -59,7 +60,7 @@ class GoogleCloudManager:
         else:
             logging.info(log_entry)
     
-    def _validate_credentials_dict(self, creds_dict: dict) -> tuple[bool, Optional[str]]:
+    def _validate_credentials_dict(self, creds_dict: dict) -> Tuple[bool, Optional[str]]:
         """
         Valida se o dicionário de credenciais contém todos os campos necessários
         
@@ -71,7 +72,7 @@ class GoogleCloudManager:
         """
         missing_fields = []
         for field in self.REQUIRED_CRED_FIELDS:
-            if field not in creds_dict or not creds_dict[field]:
+            if field not in creds_dict or creds_dict[field] is None or creds_dict[field] == "":
                 missing_fields.append(field)
         
         if missing_fields:
@@ -93,7 +94,7 @@ class GoogleCloudManager:
         
         return True, None
     
-    def _validate_spreadsheet_id(self, spreadsheet_id: str) -> tuple[bool, Optional[str]]:
+    def _validate_spreadsheet_id(self, spreadsheet_id: str) -> Tuple[bool, Optional[str]]:
         """
         Valida formato do spreadsheet_id
         
@@ -111,7 +112,6 @@ class GoogleCloudManager:
             return False, f"spreadsheet_id muito curto ({len(spreadsheet_id)} caracteres). IDs válidos geralmente têm ~44 caracteres"
         
         # Verificar caracteres válidos (alfanuméricos, underscores, hífens)
-        import re
         if not re.match(r'^[a-zA-Z0-9_-]+$', spreadsheet_id):
             return False, "spreadsheet_id contém caracteres inválidos. Apenas letras, números, '_' e '-' são permitidos"
         
@@ -239,19 +239,19 @@ class GoogleCloudManager:
                     self._connection_error = f"Erro ao autorizar cliente: {str(e)}"
                     continue
                 
-                # Etapa 5: Obter e validar spreadsheet_id
+                # Obter e validar spreadsheet_id
                 self._log("Obtendo spreadsheet_id")
                 spreadsheet_id = None
                 
                 # Tentar obter de st.secrets
                 if "spreadsheet_id" in st.secrets:
                     spreadsheet_id = st.secrets.get("spreadsheet_id")
-                    self._log(f"spreadsheet_id encontrado em st.secrets: {spreadsheet_id[:10]}...")
+                    self._log(f"spreadsheet_id encontrado em st.secrets")
                 else:
                     # Tentar variável de ambiente como fallback
                     spreadsheet_id = os.getenv("SPREADSHEET_ID")
                     if spreadsheet_id:
-                        self._log(f"spreadsheet_id encontrado em variável de ambiente: {spreadsheet_id[:10]}...")
+                        self._log(f"spreadsheet_id encontrado em variável de ambiente")
                     else:
                         self._log("spreadsheet_id não encontrado", "ERROR")
                         self._connection_error = (
@@ -268,14 +268,14 @@ class GoogleCloudManager:
                     return False
                 
                 # Etapa 6: Abrir planilha
-                self._log(f"Tentando abrir planilha com ID: {spreadsheet_id[:10]}...")
+                self._log(f"Tentando abrir planilha...")
                 try:
                     self.spreadsheet = self.client.open_by_key(spreadsheet_id)
                     self._log(f"Planilha aberta com sucesso: {self.spreadsheet.title}")
                 except gspread.exceptions.SpreadsheetNotFound:
                     self._log("Planilha não encontrada", "ERROR")
                     self._connection_error = (
-                        f"Planilha não encontrada (ID: {spreadsheet_id[:10]}...). "
+                        f"Planilha não encontrada. "
                         "Verifique se:\n"
                         "1. O ID está correto\n"
                         "2. A planilha existe\n"
@@ -289,8 +289,8 @@ class GoogleCloudManager:
                     if "PERMISSION_DENIED" in error_details or "403" in error_details:
                         self._connection_error = (
                             f"Permissão negada para acessar a planilha. "
-                            f"Compartilhe a planilha com: {creds_dict.get('client_email', 'N/A')} "
-                            "(com permissão de Editor)"
+                            f"Compartilhe a planilha com a Service Account (verifique o client_email nas credenciais) "
+                            "com permissão de Editor"
                         )
                     else:
                         self._connection_error = f"Erro da API do Google Sheets: {error_details}"
@@ -395,7 +395,7 @@ class GoogleCloudManager:
     
     def test_connection_live(self) -> dict:
         """
-        Testa a conexao em tempo real com Google Sheets
+        Testa a conexão em tempo real com Google Sheets
         
         Returns:
             Dict com 'success' (bool), 'message' (str), 'worksheets' (list ou None)
@@ -406,7 +406,7 @@ class GoogleCloudManager:
                 if not self.initialize():
                     return {
                         'success': False,
-                        'message': self._connection_error or 'Nao foi possivel conectar',
+                        'message': self._connection_error or 'Não foi possível conectar',
                         'worksheets': None
                     }
             
@@ -456,7 +456,7 @@ class GoogleCloudManager:
                 # Tenta acessar a primeira aba
                 worksheets = self.spreadsheet.worksheets()
                 return len(worksheets) > 0
-        except:
+        except Exception:
             pass
         return False
 

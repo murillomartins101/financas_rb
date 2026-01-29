@@ -1,0 +1,75 @@
+# Credenciais sensíveis - NUNCA commit estes arquivos!
+google_credentials.json
+.streamlit/secrets.toml
+*.json.key
+*.pem
+
+# Streamlit cache e temporários (mas permitir config.toml)
+.streamlit/*.pkl
+.streamlit/*.pickle
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Cache e temporários
+*.pkl
+*.pickle
+.cache/
+*.log
+
+# Dados locais
+data/local/
+*.xlsx~
+*.csv~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Documentação gerada
+docs/_build/
+site/
+
+# OS
+Thumbs.db
+.DS_Store
