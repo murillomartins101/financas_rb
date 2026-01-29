@@ -10,7 +10,7 @@ from core.data_loader import data_loader
 
 def main():
     """Página de shows"""
-    st.title("🎸 Shows - Rockbuzz Finance")
+    st.title("Shows - Rockbuzz Finance")
     
     # Carregar dados
     with st.spinner("Carregando shows..."):

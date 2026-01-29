@@ -75,11 +75,11 @@ class GoogleCloudManager:
                 st.error("ID da planilha não configurado!")
                 return False
             
-            st.success("✅ Conectado ao Google Sheets")
+            st.success("Conectado ao Google Sheets")
             return True
             
         except Exception as e:
-            st.error(f"❌ Erro ao conectar ao Google Sheets: {str(e)}")
+            st.error(f"Erro ao conectar ao Google Sheets: {str(e)}")
             return False
     
     def get_worksheet(self, sheet_name: str):
