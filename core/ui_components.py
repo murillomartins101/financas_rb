@@ -136,21 +136,43 @@ def render_sidebar():
             st.markdown(
                 f"<div style='background-color: #1a472a; padding: 8px; border-radius: 4px; "
                 f"border-left: 3px solid #3fb950;'>"
-                f"<span style='color: #3fb950;'>Conectado</span><br/>"
-                f"<small style='color: #8b949e;'>Fonte: Google Sheets</small></div>",
+                f"<span style='color: #3fb950;'>✅ Conectado</span><br/>"
+                f"<small style='color: #8b949e;'>Fonte: {connection_status['source']}</small><br/>"
+                f"<small style='color: #8b949e;'>Planilha: {connection_status.get('spreadsheet_title', 'N/A')}</small></div>",
                 unsafe_allow_html=True
             )
         else:
+            error_msg = connection_status.get('error', 'Erro desconhecido')
+            suggestion = connection_status.get('suggestion', '')
+            last_attempt = connection_status.get('last_attempt')
+            
+            # Limitar tamanho da mensagem de erro
+            if len(error_msg) > 200:
+                error_msg = error_msg[:200] + "..."
+            
             st.markdown(
                 f"<div style='background-color: #4a2020; padding: 8px; border-radius: 4px; "
                 f"border-left: 3px solid #f85149;'>"
-                f"<span style='color: #f85149;'>Desconectado</span><br/>"
-                f"<small style='color: #8b949e;'>Fonte: Google Sheets</small></div>",
+                f"<span style='color: #f85149;'>❌ Desconectado</span><br/>"
+                f"<small style='color: #8b949e;'>Fonte: {connection_status['source']}</small></div>",
                 unsafe_allow_html=True
             )
+            
+            # Mostrar detalhes do erro em um expander
+            with st.expander("📋 Ver detalhes do erro"):
+                st.error(error_msg)
+                
+                if suggestion:
+                    st.info(f"💡 Sugestão: {suggestion}")
+                
+                if last_attempt:
+                    st.caption(f"Última tentativa: {last_attempt.strftime('%d/%m/%Y %H:%M:%S')}")
+                
+                # Mostrar link para documentação
+                st.markdown("📖 [Ver guia de configuração](docs/SETUP_GOOGLE_SHEETS.md)")
         
         # Botao de teste de conexao
-        if st.button("Testar Conexao", use_container_width=True, type="secondary"):
+        if st.button("🔄 Testar Conexao", use_container_width=True, type="secondary"):
             with st.spinner("Testando conexao..."):
                 test_result = google_cloud_manager.test_connection_live()
                 if test_result['success']:
@@ -159,6 +181,15 @@ def render_sidebar():
                         st.caption(f"Abas: {', '.join(test_result['worksheets'][:3])}...")
                 else:
                     st.error(test_result['message'])
+                    
+                    # Mostrar logs de diagnóstico
+                    with st.expander("🔍 Ver logs de diagnóstico"):
+                        logs = google_cloud_manager.get_initialization_logs()
+                        if logs:
+                            for log in logs:
+                                st.text(log)
+                        else:
+                            st.text("Nenhum log disponível")
         
         st.divider()
         
