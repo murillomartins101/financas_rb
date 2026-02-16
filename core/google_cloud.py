@@ -15,6 +15,7 @@ import logging
 from datetime import datetime
 import re
 
+
 class GoogleCloudManager:
     """
     Gerenciador de conexão com Google Cloud e Google Sheets API
