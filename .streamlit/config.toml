@@ -1,0 +1,24 @@
+# Streamlit Configuration File
+# Documentação: https://docs.streamlit.io/library/advanced-features/configuration
+
+[server]
+# Habilita CORS para permitir que o app rode em diferentes origens
+enableCORS = false
+# Permite rodar sem websockets (útil para alguns ambientes de deploy)
+enableXsrfProtection = true
+
+[browser]
+# Coleta de estatísticas de uso (opcional, pode desabilitar)
+gatherUsageStats = false
+
+[theme]
+# Tema personalizado do Rockbuzz Finance
+primaryColor = "#FF4B4B"
+backgroundColor = "#0E1117"
+secondaryBackgroundColor = "#262730"
+textColor = "#FAFAFA"
+font = "sans serif"
+
+[client]
+# Mostra a barra de ferramentas de desenvolvimento
+showErrorDetails = true
