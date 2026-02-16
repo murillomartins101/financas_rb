@@ -103,7 +103,7 @@ def render_kpi_card_with_sparkline(title, value, sparkline_data, delta=None, del
     
     if sparkline_data and len(sparkline_data) > 1:
         fig = create_sparkline(sparkline_data, color)
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        st.plotly_chart(fig, width='stretch', config={'displayModeBar': False})
 
 def create_area_chart(df, x_col, y_col, title, color='#58a6ff', show_gradient=True):
     """Cria grafico de area com tema dark"""
@@ -624,7 +624,7 @@ def main():
                 '',
                 color=DARK_THEME['accent_green']
             )
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(fig, width='stretch', config={'displayModeBar': False})
         else:
             st.info("Dados insuficientes para o grafico")
         
@@ -649,7 +649,7 @@ def main():
                 '',
                 color=DARK_THEME['accent_red']
             )
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(fig, width='stretch', config={'displayModeBar': False})
         else:
             st.info("Dados insuficientes para o grafico")
         
@@ -681,7 +681,7 @@ def main():
                 top_categories['valor'].tolist(),
                 ''
             )
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(fig, width='stretch', config={'displayModeBar': False})
         else:
             st.info("Sem dados de categorias")
         
@@ -706,7 +706,7 @@ def main():
                 '',
                 colors=[DARK_THEME['accent_green'], DARK_THEME['accent_red']]
             )
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(fig, width='stretch', config={'displayModeBar': False})
         else:
             st.info("Dados insuficientes")
         
@@ -731,7 +731,7 @@ def main():
             '',
             color=DARK_THEME['accent_cyan']
         )
-        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        st.plotly_chart(fig, width='stretch', config={'displayModeBar': False})
         
         st.markdown("</div>", unsafe_allow_html=True)
     
@@ -786,6 +786,6 @@ def main():
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    if st.button("Atualizar Dados", use_container_width=True):
+    if st.button("Atualizar Dados", width='stretch'):
         data_loader.load_all_data(force_refresh=True)
         st.rerun()

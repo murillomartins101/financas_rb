@@ -71,7 +71,7 @@ def render_sidebar():
             st.markdown(f"**{user_name}**")
             st.caption(f"_{user_role}_")
             
-            if st.button("Sair", use_container_width=True, type="secondary"):
+            if st.button("Sair", width='stretch', type="secondary"):
                 from core.auth import logout
                 logout()
         
@@ -92,7 +92,7 @@ def render_sidebar():
             if st.button(
                 label, 
                 key=f"menu_{page}",
-                use_container_width=True,
+                width='stretch',
                 type="secondary" if st.session_state.get("current_page") == page else "primary"
             ):
                 st.session_state.current_page = page
@@ -113,7 +113,7 @@ def render_sidebar():
             if st.button(
                 label,
                 key=f"quick_{page}",
-                use_container_width=True,
+                width='stretch',
                 type="secondary"
             ):
                 st.session_state.current_page = page
@@ -175,7 +175,7 @@ def render_sidebar():
                 st.markdown("📖 [Ver guia de configuração](docs/SETUP_GOOGLE_SHEETS.md)")
         
         # Botão de teste de conexão
-        if st.button("🔄 Testar Conexão", use_container_width=True, type="secondary"):
+        if st.button("🔄 Testar Conexão", width='stretch', type="secondary"):
             with st.spinner("Testando conexão..."):
                 test_result = google_cloud_manager.test_connection_live()
                 if test_result['success']:
@@ -197,7 +197,7 @@ def render_sidebar():
         st.divider()
         
         # Botão para atualizar dados
-        if st.button("Atualizar Dados", use_container_width=True):
+        if st.button("Atualizar Dados", width='stretch'):
             from core.data_loader import data_loader
             data_loader.load_all_data(force_refresh=True)
             st.rerun()

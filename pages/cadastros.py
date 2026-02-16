@@ -67,7 +67,7 @@ def render_shows_crud(data):
     
     if action == "Visualizar":
         if not shows_df.empty:
-            st.dataframe(shows_df, use_container_width=True, height=400)
+            st.dataframe(shows_df, width='stretch', height=400)
             st.caption(f"Total: {len(shows_df)} shows")
         else:
             st.info("Nenhum show cadastrado")
@@ -234,7 +234,7 @@ def render_transactions_crud(data):
             if status_filter != "Todos":
                 filtered_df = filtered_df[filtered_df['payment_status'] == status_filter]
             
-            st.dataframe(filtered_df, use_container_width=True, height=400)
+            st.dataframe(filtered_df, width='stretch', height=400)
             st.caption(f"Total: {len(filtered_df)} transações")
         else:
             st.info("Nenhuma transação cadastrada")
@@ -415,7 +415,7 @@ def render_payout_rules_crud(data):
     
     if action == "Visualizar":
         if not rules_df.empty:
-            st.dataframe(rules_df, use_container_width=True, height=300)
+            st.dataframe(rules_df, width='stretch', height=300)
             st.caption(f"Total: {len(rules_df)} regras")
         else:
             st.info("Nenhuma regra de rateio cadastrada")
@@ -486,7 +486,7 @@ def render_members_crud(data):
     
     if action == "Visualizar":
         if not members_df.empty:
-            st.dataframe(members_df, use_container_width=True, height=300)
+            st.dataframe(members_df, width='stretch', height=300)
             st.caption(f"Total: {len(members_df)} membros")
         else:
             st.info("Nenhum membro cadastrado")
@@ -550,7 +550,7 @@ def render_merchandising_crud(data):
     
     if action == "Visualizar":
         if not merch_df.empty:
-            st.dataframe(merch_df, use_container_width=True, height=300)
+            st.dataframe(merch_df, width='stretch', height=300)
             st.caption(f"Total: {len(merch_df)} registros")
         else:
             st.info("Nenhum registro de merchandising")

@@ -223,7 +223,7 @@ def main():
                     yaxis_title="Publico",
                     showlegend=False
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("Dados de publico insuficientes")
         else:
@@ -257,7 +257,7 @@ def main():
                     yaxis_title="Cache (R$)",
                     showlegend=False
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("Dados de cache insuficientes")
         else:
@@ -288,7 +288,7 @@ def main():
                 height=350,
                 showlegend=False
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.info("Dados de status nao disponiveis")
     
@@ -320,7 +320,7 @@ def main():
                     xaxis_title="Publico",
                     yaxis_title="Cache (R$)"
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("Dados insuficientes para correlacao")
         else:
@@ -365,7 +365,7 @@ def main():
                 xaxis_title="Publico",
                 yaxis_title=""
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -392,8 +392,8 @@ def main():
     if colunas_disponiveis:
         st.dataframe(
             shows_display[colunas_disponiveis].sort_values('data_show' if 'data_show' in shows_display.columns else colunas_disponiveis[0], ascending=False),
-            use_container_width=True,
+            width='stretch',
             height=400
         )
     else:
-        st.dataframe(shows_display, use_container_width=True, height=400)
+        st.dataframe(shows_display, width='stretch', height=400)

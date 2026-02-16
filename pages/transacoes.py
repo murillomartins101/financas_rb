@@ -53,4 +53,4 @@ def main():
     else:
         transacoes_display = transacoes_df.copy()
     
-    st.dataframe(transacoes_display, use_container_width=True, height=400)
+    st.dataframe(transacoes_display, width='stretch', height=400)

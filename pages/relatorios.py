@@ -197,7 +197,7 @@ def main():
                 hovermode='x unified'
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
             
             col_proj1, col_proj2, col_proj3 = st.columns(3)
             
@@ -302,7 +302,7 @@ def main():
                     height=350,
                     showlegend=False
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("Sem dados de categorias")
         else:
@@ -351,7 +351,7 @@ def main():
                     xaxis_title="Mes",
                     yaxis_title="Saldo (R$)"
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
             else:
                 st.info("Dados insuficientes")
         else:

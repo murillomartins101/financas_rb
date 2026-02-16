@@ -232,7 +232,7 @@ def show_receitas_vs_despesas():
         template='plotly_white'
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     # Análise temporal
     st.subheader("Evolução Temporal")
@@ -270,7 +270,7 @@ def show_receitas_vs_despesas():
                 template='plotly_white'
             )
             
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, width='stretch')
 
 def show_despesas_detalhadas():
     """Página de análise detalhada de despesas - Visual Melhorado"""
@@ -382,7 +382,7 @@ def show_despesas_detalhadas():
                     xaxis_title="Valor (R$)",
                     yaxis_title=""
                 )
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, width='stretch')
             else:
                 st.info("Sem dados de subcategoria")
         elif 'categoria' in despesas.columns:
@@ -410,7 +410,7 @@ def show_despesas_detalhadas():
                     xaxis_title="Valor (R$)",
                     yaxis_title=""
                 )
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, width='stretch')
             else:
                 st.info("Sem dados de categoria")
         else:
@@ -452,7 +452,7 @@ def show_despesas_detalhadas():
                     height=350,
                     showlegend=False
                 )
-                st.plotly_chart(fig_pie, use_container_width=True)
+                st.plotly_chart(fig_pie, width='stretch')
             else:
                 st.info("Sem dados de categoria")
         else:
@@ -501,7 +501,7 @@ def show_despesas_detalhadas():
                 xaxis_title="Valor (R$)",
                 yaxis_title=""
             )
-            st.plotly_chart(fig_shows, use_container_width=True)
+            st.plotly_chart(fig_shows, width='stretch')
         else:
             st.info("Sem dados de shows")
     else:
@@ -522,14 +522,14 @@ def show_despesas_detalhadas():
     if colunas_disponiveis:
         st.dataframe(
             despesas_display[colunas_disponiveis].sort_values('valor' if 'valor' in despesas_display.columns else 'data', ascending=False),
-            use_container_width=True,
+            width='stretch',
             height=400
         )
     
     # Botao de exportacao
     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
     with col_btn1:
-        if st.button("Exportar para Excel", use_container_width=True):
+        if st.button("Exportar para Excel", width='stretch'):
             try:
                 import io
                 buffer = io.BytesIO()
@@ -643,7 +643,7 @@ def show_receitas_detalhadas():
                     xaxis_title="Show ID",
                     yaxis_title="Receita (R$)"
                 )
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, width='stretch')
             
             with col_chart2:
                 # Gráfico de pizza (donut) com tema dark
@@ -664,7 +664,7 @@ def show_receitas_detalhadas():
                     height=400,
                     showlegend=False
                 )
-                st.plotly_chart(fig_pie, use_container_width=True)
+                st.plotly_chart(fig_pie, width='stretch')
     
     # Análise por categoria com visual melhorado
     if 'categoria' in receitas.columns:
@@ -712,7 +712,7 @@ def show_receitas_detalhadas():
                     xaxis_title="Valor (R$)",
                     yaxis_title=""
                 )
-                st.plotly_chart(fig_cat, use_container_width=True)
+                st.plotly_chart(fig_cat, width='stretch')
     
     # Evolucao temporal das receitas
     if 'data' in receitas.columns:
@@ -743,7 +743,7 @@ def show_receitas_detalhadas():
                 xaxis_title="Mes",
                 yaxis_title="Valor (R$)"
             )
-            st.plotly_chart(fig_line, use_container_width=True)
+            st.plotly_chart(fig_line, width='stretch')
     
     # Tabela detalhada
     st.markdown("### Todas as Receitas")
@@ -758,14 +758,14 @@ def show_receitas_detalhadas():
     if colunas_disponiveis:
         st.dataframe(
             receitas_display[colunas_disponiveis].sort_values('valor' if 'valor' in receitas_display.columns else 'data', ascending=False),
-            use_container_width=True,
+            width='stretch',
             height=400
         )
     
     # Botao de exportacao
     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
     with col_btn1:
-        if st.button("Exportar para Excel", key="export_receitas", use_container_width=True):
+        if st.button("Exportar para Excel", key="export_receitas", width='stretch'):
             try:
                 import io
                 buffer = io.BytesIO()
