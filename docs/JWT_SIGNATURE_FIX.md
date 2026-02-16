@@ -112,6 +112,7 @@ For more details on setting up Google Sheets integration, see:
 - `requirements.txt`: Removed `oauth2client>=4.1.3`, added `google-auth>=2.0.0`
 - `core/google_cloud.py`: Enhanced error handling and credential loading
 - `core/google_sheets.py`: Improved error messages for JWT issues
+- `secrets.toml`: Updated with correct credentials from `financasrb-ddd33bb9d63f.json` (Feb 2026)
 
 ### Key Improvements
 - ✅ No more library conflicts
@@ -119,3 +120,11 @@ For more details on setting up Google Sheets integration, see:
 - ✅ Better error messages with actionable solutions
 - ✅ Support for optional fields like `universe_domain`
 - ✅ Detailed logging for troubleshooting
+- ✅ Credentials synchronized between JSON file and secrets.toml
+
+### Latest Fix (February 2026)
+**Issue:** "Invalid JWT Signature" error was caused by outdated/incorrect credentials in `secrets.toml`
+**Solution:** Updated `secrets.toml` to use the correct and current Service Account credentials from `financasrb-ddd33bb9d63f.json`
+- Updated `private_key_id` from `abe1d9e890262b831a89bb50a177049f7465d50d` to `ddd33bb9d63fa8be3c0e8278b791f5036b829335`
+- Updated `private_key` with the corresponding valid key
+- Both credentials now match the active Service Account in Google Cloud Console
