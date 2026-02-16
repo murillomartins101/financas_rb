@@ -128,3 +128,18 @@ For more details on setting up Google Sheets integration, see:
 - Updated `private_key_id` from `abe1d9e890262b831a89bb50a177049f7465d50d` to `ddd33bb9d63fa8be3c0e8278b791f5036b829335`
 - Updated `private_key` with the corresponding valid key
 - Both credentials now match the active Service Account in Google Cloud Console
+
+### Latest Fix (February 16, 2026) - Additional Safeguards
+**Issue:** Potential JWT Signature errors from malformed private_key credentials
+**Solution:** Added robust private_key normalization in `core/google_cloud.py`
+- Added validation to detect if private_key has literal `\n` strings instead of real newlines
+- Automatically converts literal `\n` to real newlines when detected (< 10 real newlines but contains `\n`)
+- Removed misleading `replace('\\n', '\n')` from `teste_conexao.py` that could cause confusion
+- Added detailed logging to track normalization when it occurs
+- This ensures JWT signatures work correctly regardless of how credentials are loaded
+
+**What Changed:**
+1. `core/google_cloud.py`: Added smart private_key normalization before creating Credentials object
+2. `core/teste_conexao.py`: Removed unnecessary and potentially confusing private_key replacement
+3. Both implementations now correctly handle credentials from TOML, JSON, and environment variables
+
