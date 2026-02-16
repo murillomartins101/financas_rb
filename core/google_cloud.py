@@ -60,12 +60,18 @@ class GoogleCloudManager:
         self._initialization_logs.append(log_entry)
         
         # Também logar no console em desenvolvimento, mas apenas para erros graves
-        # Não logar "Nenhuma fonte de credenciais encontrada" como ERROR no console
-        if level == "ERROR" and "Nenhuma fonte de credenciais encontrada" not in message:
+        # Não logar mensagens sobre credenciais ausentes se ainda não tentamos inicializar
+        # (ou seja, se foi apenas uma chamada a get_connection_status sem initialize)
+        should_suppress = (
+            not self._initialization_attempted and 
+            ("credenciais" in message.lower() or "credentials" in message.lower())
+        )
+        
+        if level == "ERROR" and not should_suppress:
             logging.error(log_entry)
         elif level == "WARNING":
             logging.warning(log_entry)
-        elif level == "INFO":
+        else:  # INFO and other levels
             logging.info(log_entry)
     
     def _validate_credentials_dict(self, creds_dict: dict) -> Tuple[bool, Optional[str]]:
@@ -225,7 +231,8 @@ class GoogleCloudManager:
                             creds_source = "st.secrets (secrets.toml)"
                             self._log("Credenciais carregadas do secrets.toml com sucesso")
                     except Exception as e:
-                        self._log(f"secrets.toml não encontrado ou sem credenciais", "INFO")
+                        # Secrets não encontrado é esperado durante desenvolvimento local
+                        self._log(f"Secrets.toml não disponível: {str(e)}", "INFO")
                         # Não continue aqui, vá para o método 3
                         pass
                 
