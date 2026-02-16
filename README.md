@@ -1,5 +1,15 @@
 ROCKBUZZ FINANCE (VERSÃO FINAL)
 
+## 🚀 INÍCIO RÁPIDO
+
+**Novo usuário?** Comece aqui: [QUICKSTART.md](QUICKSTART.md)
+
+**Problemas com credenciais?** Veja: [.streamlit/README.md](.streamlit/README.md)
+
+**Erros ou problemas?** Consulte: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+
+---
+
 1. OBJETIVO DO SISTEMA
 Criar um dashboard financeiro em Python (Streamlit) que permita:
 	• Acesso via login (mobile e desktop)

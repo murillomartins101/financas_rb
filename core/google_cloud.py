@@ -244,11 +244,18 @@ class GoogleCloudManager:
                 if not creds_dict:
                     self._log("Nenhuma fonte de credenciais encontrada", "ERROR")
                     self._connection_error = (
-                        "Credenciais do Google Cloud não configuradas. "
-                        "Configure através de:\n"
-                        "1. Arquivo 'google_credentials.json' na raiz do projeto, OU\n"
-                        "2. st.secrets['google_credentials'] no secrets.toml, OU\n"
-                        "3. Variável de ambiente GOOGLE_CREDENTIALS_JSON"
+                        "❌ Credenciais do Google Cloud não configuradas.\n\n"
+                        "📋 Para configurar, escolha UMA das opções:\n\n"
+                        "1️⃣ Arquivo secrets.toml (RECOMENDADO):\n"
+                        "   • Copie: .streamlit/secrets.toml.example → .streamlit/secrets.toml\n"
+                        "   • Preencha com suas credenciais reais\n"
+                        "   • Tutorial: docs/SETUP_GOOGLE_SHEETS.md\n\n"
+                        "2️⃣ Arquivo JSON local:\n"
+                        "   • Coloque google_credentials.json na raiz do projeto\n"
+                        "   • Configure SPREADSHEET_ID como variável de ambiente\n\n"
+                        "3️⃣ Variável de ambiente:\n"
+                        "   • Configure GOOGLE_CREDENTIALS_JSON com o JSON completo\n\n"
+                        "📚 Ajuda: .streamlit/README.md | docs/TROUBLESHOOTING.md"
                     )
                     return False
                 

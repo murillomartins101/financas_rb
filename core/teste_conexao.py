@@ -83,7 +83,11 @@ class GoogleCloudManager:
                     creds_source = "google_credentials.json local"
 
                 if not creds_dict:
-                    self._connection_error = "Nenhuma fonte de credenciais encontrada."
+                    self._connection_error = (
+                        "❌ Credenciais não configuradas. "
+                        "Copie .streamlit/secrets.toml.example → .streamlit/secrets.toml e preencha. "
+                        "Tutorial: docs/SETUP_GOOGLE_SHEETS.md"
+                    )
                     return False
 
                 # Validação das credenciais
