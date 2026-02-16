@@ -225,7 +225,7 @@ class GoogleCloudManager:
                             creds_source = "st.secrets (secrets.toml)"
                             self._log("Credenciais carregadas do secrets.toml com sucesso")
                     except Exception as e:
-                        self._log(f"Erro ao acessar secrets do Streamlit: {e}", "ERROR")
+                        self._log(f"secrets.toml não encontrado ou sem credenciais", "INFO")
                         # Não continue aqui, vá para o método 3
                         pass
                 
