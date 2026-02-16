@@ -1,6 +1,8 @@
 # Credenciais sensíveis - NUNCA commit estes arquivos!
 google_credentials.json
+financasrb-*.json
 .streamlit/secrets.toml
+secrets.toml
 *.json.key
 *.pem
 

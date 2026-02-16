@@ -93,6 +93,8 @@ Você tem duas opções para configurar as credenciais:
 
 3. Abra o arquivo JSON das credenciais e copie os valores para `.streamlit/secrets.toml`:
    
+   **IMPORTANTE:** Use a sintaxe TOML correta com `key = "value"` (não use JSON syntax)
+   
    ```toml
    spreadsheet_id = "SEU_SPREADSHEET_ID"
    
@@ -107,6 +109,7 @@ Você tem duas opções para configurar as credenciais:
    token_uri = "https://oauth2.googleapis.com/token"
    auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
    client_x509_cert_url = "valor do JSON"
+   universe_domain = "googleapis.com"
    ```
 
 4. ⚠️ **IMPORTANTE**: O campo `private_key` deve manter as quebras de linha (`\n`)
