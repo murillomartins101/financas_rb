@@ -10,7 +10,9 @@ import os
 from typing import Dict, Optional
 from datetime import datetime
 from core.google_sheets import get_all_data, read_sheet
+from core.google_cloud import google_cloud_manager
 import warnings
+import logging
 warnings.filterwarnings('ignore')
 
 class DataLoader:
@@ -22,6 +24,25 @@ class DataLoader:
         self.excel_path = Path("data/Financas_RB.xlsx")
         self.use_excel_fallback = False
         self.last_load_time = None
+        self._load_data_config()
+    
+    def _load_data_config(self):
+        """
+        Carrega configuração de fonte de dados de st.secrets
+        """
+        try:
+            if "data_config" in st.secrets:
+                self.primary_source = st.secrets["data_config"].get("primary_source", "google")
+                self.allow_fallback = st.secrets["data_config"].get("allow_fallback", False)
+            else:
+                # Valores padrão se não houver configuração
+                self.primary_source = "google"
+                self.allow_fallback = False
+        except Exception as e:
+            # Em caso de erro, usar valores padrão seguros
+            logging.warning(f"Erro ao carregar data_config de secrets: {e}")
+            self.primary_source = "google"
+            self.allow_fallback = False
         
     def load_all_data(self, force_refresh: bool = False) -> Dict[str, pd.DataFrame]:
         """
@@ -39,35 +60,128 @@ class DataLoader:
         if not needs_refresh and hasattr(st.session_state, 'all_data'):
             return st.session_state.all_data
         
-        try:
-            # Tentar Google Sheets primeiro
-            data = get_all_data()
+        # Determinar fonte de dados baseado na configuração
+        if self.primary_source == "excel":
+            # Excel como fonte primária - carregar diretamente
+            logging.info("[DATA_LOADER] Fonte primária configurada: Excel local")
+            data = self._load_from_excel()
+            self.use_excel_fallback = False
+            data_source = "Excel local"
             
-            # Verificar se todos os dados foram carregados
-            if self._validate_data(data):
-                self.use_excel_fallback = False
-                data_source = "Google Sheets"
+        elif self.primary_source == "google":
+            # Google Sheets como fonte primária
+            logging.info("[DATA_LOADER] Fonte primária configurada: Google Sheets")
+            
+            # Verificar se Google Cloud está inicializado
+            connection_status = google_cloud_manager.get_connection_status()
+            
+            if not connection_status['connected']:
+                # Google não está conectado
+                error_msg = connection_status.get('error', 'Credenciais não configuradas')
+                logging.error(f"[DATA_LOADER] Google Sheets não conectado: {error_msg}")
+                
+                if self.allow_fallback:
+                    # Fallback permitido - usar Excel com warning
+                    logging.warning("[DATA_LOADER] ⚠️ Executando fallback para Excel local (allow_fallback=true)")
+                    st.warning(
+                        f"⚠️ **Operando em modo fallback**\n\n"
+                        f"**Causa:** Falha ao conectar com Google Sheets\n\n"
+                        f"**Detalhes:** {error_msg}\n\n"
+                        f"**Ação:** Usando Excel local como fonte de dados alternativa"
+                    )
+                    data = self._load_from_excel()
+                    self.use_excel_fallback = True
+                    data_source = "Excel local (fallback)"
+                else:
+                    # Fallback não permitido - falhar explicitamente
+                    logging.error("[DATA_LOADER] ❌ Falha crítica: Google Sheets não disponível e fallback desabilitado")
+                    error_message = (
+                        f"❌ **Falha na autenticação com Google Sheets**\n\n"
+                        f"**Configuração:** `primary_source = \"google\"` e `allow_fallback = false`\n\n"
+                        f"**Problema:** {error_msg}\n\n"
+                        f"**Solução:**\n"
+                        f"1. Configure as credenciais do Google Cloud em `.streamlit/secrets.toml`\n"
+                        f"2. Ou altere `allow_fallback = true` para permitir uso do Excel local\n"
+                        f"3. Ou altere `primary_source = \"excel\"` para usar Excel como fonte primária\n\n"
+                        f"📚 Consulte: `.streamlit/README.md` e `docs/SETUP_GOOGLE_SHEETS.md`"
+                    )
+                    st.error(error_message)
+                    raise RuntimeError(f"Google Sheets não disponível: {error_msg}")
+            
             else:
-                # Fallback para Excel
-                data = self._load_from_excel()
-                self.use_excel_fallback = True
-                data_source = "Excel local"
-            
-            # Processar dados
-            data = self._process_data(data)
-            
-            # Armazenar em cache
-            st.session_state.all_data = data
-            st.session_state.data_source = data_source
-            self.last_load_time = datetime.now()
-            
-            st.sidebar.info(f"📊 Fonte: {data_source}")
-            
-            return data
-            
-        except Exception as e:
-            st.error(f"Erro ao carregar dados: {str(e)}")
+                # Google está conectado - tentar carregar dados
+                try:
+                    logging.info("[DATA_LOADER] Carregando dados do Google Sheets...")
+                    data = get_all_data()
+                    
+                    # Validar se os dados foram carregados corretamente
+                    if self._validate_data(data):
+                        self.use_excel_fallback = False
+                        data_source = "Google Sheets"
+                        logging.info("[DATA_LOADER] ✅ Dados carregados com sucesso do Google Sheets")
+                    else:
+                        # Dados incompletos do Google
+                        logging.warning("[DATA_LOADER] ⚠️ Google Sheets conectado mas dados incompletos/inválidos")
+                        
+                        if self.allow_fallback:
+                            # Fallback para Excel
+                            logging.warning("[DATA_LOADER] Executando fallback para Excel devido a dados incompletos")
+                            st.warning(
+                                "⚠️ **Google Sheets conectado mas dados incompletos**\n\n"
+                                "Usando Excel local como fonte alternativa."
+                            )
+                            data = self._load_from_excel()
+                            self.use_excel_fallback = True
+                            data_source = "Excel local (fallback)"
+                        else:
+                            # Sem fallback - reportar erro
+                            logging.error("[DATA_LOADER] Dados incompletos e fallback desabilitado")
+                            st.error(
+                                "❌ **Google Sheets conectado mas dados inválidos**\n\n"
+                                "Verifique se todas as abas necessárias existem e contêm dados."
+                            )
+                            raise RuntimeError("Dados inválidos no Google Sheets e fallback desabilitado")
+                
+                except Exception as e:
+                    # Erro ao carregar do Google
+                    logging.error(f"[DATA_LOADER] Erro ao carregar dados do Google Sheets: {e}")
+                    
+                    if self.allow_fallback:
+                        logging.warning("[DATA_LOADER] Executando fallback para Excel devido a erro")
+                        st.warning(
+                            f"⚠️ **Erro ao carregar do Google Sheets**\n\n"
+                            f"Usando Excel local como fonte alternativa.\n\n"
+                            f"Erro: {str(e)}"
+                        )
+                        data = self._load_from_excel()
+                        self.use_excel_fallback = True
+                        data_source = "Excel local (fallback)"
+                    else:
+                        logging.error("[DATA_LOADER] Erro ao carregar e fallback desabilitado")
+                        st.error(f"❌ **Erro ao carregar dados do Google Sheets**\n\n{str(e)}")
+                        raise
+        else:
+            # Fonte desconhecida
+            logging.error(f"[DATA_LOADER] Fonte primária desconhecida: {self.primary_source}")
+            st.error(f"Fonte de dados desconhecida: {self.primary_source}")
             return {}
+        
+        # Processar dados
+        data = self._process_data(data)
+        
+        # Armazenar em cache
+        st.session_state.all_data = data
+        st.session_state.data_source = data_source
+        st.session_state.last_cache_update = datetime.now()
+        self.last_load_time = datetime.now()
+        
+        # Exibir fonte na sidebar
+        if self.use_excel_fallback:
+            st.sidebar.warning(f"⚠️ Fonte: {data_source}")
+        else:
+            st.sidebar.info(f"📊 Fonte: {data_source}")
+        
+        return data
     
     def _load_from_excel(self) -> Dict[str, pd.DataFrame]:
         """
