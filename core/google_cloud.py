@@ -169,23 +169,43 @@ class GoogleCloudManager:
                 
                 # Obter diretório base do projeto
                 base_dir = Path(__file__).parent.parent
-                json_path = base_dir / "google_credentials.json"
                 
                 # Método 1: Usar arquivo JSON local (prioridade para desenvolvimento local)
+                # Tentar google_credentials.json primeiro
+                json_path = base_dir / "google_credentials.json"
+                
+                # Se não existir, procurar por outros arquivos JSON de credenciais na raiz
+                if not json_path.exists():
+                    # Procurar por arquivos JSON que parecem ser credenciais
+                    for candidate in base_dir.glob("*.json"):
+                        # Pular arquivos que claramente não são credenciais
+                        if candidate.name in ['package.json', 'tsconfig.json', 'manifest.json']:
+                            continue
+                        # Verificar se tem campos de service account
+                        try:
+                            with open(candidate, 'r') as f:
+                                test_creds = json.load(f)
+                            if 'type' in test_creds and test_creds.get('type') == 'service_account':
+                                json_path = candidate
+                                self._log(f"Encontrado arquivo de credenciais: {json_path.name}")
+                                break
+                        except:
+                            continue
+                
                 if json_path.exists():
                     self._log(f"Encontrado arquivo de credenciais local: {json_path}")
                     try:
                         with open(json_path, 'r') as f:
                             creds_dict = json.load(f)
-                        creds_source = "arquivo local (google_credentials.json)"
+                        creds_source = f"arquivo local ({json_path.name})"
                         self._log("Credenciais carregadas do arquivo local com sucesso")
                     except json.JSONDecodeError as e:
                         self._log(f"Erro ao decodificar JSON do arquivo local: {e}", "ERROR")
-                        self._connection_error = f"Arquivo google_credentials.json contém JSON inválido: {str(e)}"
+                        self._connection_error = f"Arquivo {json_path.name} contém JSON inválido: {str(e)}"
                         continue
                     except Exception as e:
                         self._log(f"Erro ao ler arquivo local: {e}", "ERROR")
-                        self._connection_error = f"Erro ao ler google_credentials.json: {str(e)}"
+                        self._connection_error = f"Erro ao ler {json_path.name}: {str(e)}"
                         continue
                 
                 # Método 2: Usar secrets.toml (recomendado para Streamlit Cloud)
