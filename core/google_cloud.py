@@ -45,6 +45,7 @@ class GoogleCloudManager:
         self._connection_error = None
         self._last_attempt_time = None
         self._initialization_logs = []
+        self._initialization_attempted = False  # Track if we've tried to initialize
         
     def _log(self, message: str, level: str = "INFO"):
         """
@@ -58,12 +59,13 @@ class GoogleCloudManager:
         log_entry = f"[{timestamp}] [{level}] {message}"
         self._initialization_logs.append(log_entry)
         
-        # Também logar no console em desenvolvimento
-        if level == "ERROR":
+        # Também logar no console em desenvolvimento, mas apenas para erros graves
+        # Não logar "Nenhuma fonte de credenciais encontrada" como ERROR no console
+        if level == "ERROR" and "Nenhuma fonte de credenciais encontrada" not in message:
             logging.error(log_entry)
         elif level == "WARNING":
             logging.warning(log_entry)
-        else:
+        elif level == "INFO":
             logging.info(log_entry)
     
     def _validate_credentials_dict(self, creds_dict: dict) -> Tuple[bool, Optional[str]]:
@@ -155,6 +157,7 @@ class GoogleCloudManager:
         """
         self._last_attempt_time = datetime.now()
         self._initialization_logs = []  # Limpar logs anteriores
+        self._initialization_attempted = True  # Mark that we've attempted initialization
         
         # Se já foi inicializado com sucesso, retorna True
         if self._initialized and self.client and self.spreadsheet:
@@ -242,7 +245,7 @@ class GoogleCloudManager:
                 
                 # Se ainda não tem credenciais, retornar erro
                 if not creds_dict:
-                    self._log("Nenhuma fonte de credenciais encontrada", "ERROR")
+                    self._log("Nenhuma fonte de credenciais encontrada", "WARNING")
                     self._connection_error = (
                         "❌ Credenciais do Google Cloud não configuradas.\n\n"
                         "📋 Para configurar, escolha UMA das opções:\n\n"
@@ -439,6 +442,7 @@ class GoogleCloudManager:
     def get_connection_status(self) -> dict:
         """
         Retorna o status da conexão com Google Sheets com informações detalhadas
+        NÃO tenta inicializar automaticamente - use initialize() para isso.
         
         Returns:
             Dict com 'connected' (bool), 'source' (str), 'error' (str ou None),
@@ -456,7 +460,10 @@ class GoogleCloudManager:
             }
         else:
             # Garantir que error sempre é uma string válida
-            error_str = str(self._connection_error) if self._connection_error else 'Credenciais não configuradas'
+            if not self._initialization_attempted:
+                error_str = 'Credenciais não configuradas (clique em "Testar Conexão" para verificar)'
+            else:
+                error_str = str(self._connection_error) if self._connection_error else 'Credenciais não configuradas'
             
             # Gerar sugestão baseada no erro
             suggestion = None
