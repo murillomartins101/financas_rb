@@ -86,12 +86,8 @@ class GoogleCloudManager:
                     self._connection_error = "Nenhuma fonte de credenciais encontrada."
                     return False
 
-                # --- CORREÇÃO PARA O ERRO DE JWT SIGNATURE ---
-                if 'private_key' in creds_dict:
-                    # Remove escapes de quebra de linha que invalidam a assinatura
-                    creds_dict['private_key'] = creds_dict['private_key'].replace('\\n', '\n')
-                
-                # Validação
+                # Validação das credenciais
+                # Nota: TOML já carrega private_key com newlines reais, não precisamos fazer replace
                 is_valid, error_msg = self._validate_credentials_dict(creds_dict)
                 if not is_valid:
                     self._connection_error = f"Erro na estrutura ({creds_source}): {error_msg}"

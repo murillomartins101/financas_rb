@@ -261,6 +261,22 @@ class GoogleCloudManager:
                 
                 self._log("Estrutura das credenciais validada com sucesso")
                 
+                # Normalizar private_key: garantir que tenha newlines reais
+                # Uma chave RSA privada PEM típica tem ~25-30 newlines
+                # Se tiver muito poucas, provavelmente são literais \\n que precisam ser convertidos
+                if 'private_key' in creds_dict and isinstance(creds_dict['private_key'], str):
+                    pk = creds_dict['private_key']
+                    real_newlines = pk.count('\n')
+                    # Chaves PEM válidas devem ter pelo menos 10 newlines
+                    if real_newlines < 10 and '\\n' in pk:
+                        self._log(
+                            f"Private key tem apenas {real_newlines} newlines reais mas contém '\\\\n' literal. "
+                            "Convertendo \\\\n para newlines reais...", 
+                            "WARNING"
+                        )
+                        creds_dict['private_key'] = pk.replace('\\n', '\n')
+                        self._log(f"Após conversão: {creds_dict['private_key'].count(chr(10))} newlines reais")
+                
                 # Etapa 3: Criar objeto Credentials
                 self._log("Criando objeto de credenciais do Google")
                 try:
