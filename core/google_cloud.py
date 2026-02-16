@@ -4,6 +4,7 @@ Gerencia autenticação e inicialização de clientes
 """
 
 import streamlit as st
+from google.oauth2 import service_account
 import gspread
 from google.oauth2.service_account import Credentials
 from typing import Dict, Any, Optional, Tuple
@@ -14,6 +15,16 @@ import time
 import logging
 from datetime import datetime
 import re
+
+# Carrega os dados do segredo
+creds_info = st.secrets["gcp_service_account"]
+
+# Cria as credenciais
+credentials = service_account.Credentials.from_service_account_info(creds_info)
+
+# Agora use 'credentials' nas suas chamadas de API do Google
+
+
 
 class GoogleCloudManager:
     """
