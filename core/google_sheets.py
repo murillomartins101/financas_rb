@@ -157,7 +157,7 @@ def get_all_data() -> Dict[str, pd.DataFrame]:
     data = {}
     
     last_update = st.session_state.get("last_cache_update")
-    cache_expired = True if not last_update else (datetime.now() - last_update).seconds > 300
+    cache_expired = True if not last_update else (datetime.now() - last_update).total_seconds() > 300
 
     for aba in abas:
         cache_key = f"financas_{aba}_data"

@@ -69,8 +69,11 @@ class GoogleCloudManager:
         """
         Valida se o dicionário de credenciais contém todos os campos necessários
         
+        NOTA: Esta função pode modificar creds_dict adicionando valores padrão
+        para campos opcionais ausentes (ex: universe_domain).
+        
         Args:
-            creds_dict: Dicionário com credenciais
+            creds_dict: Dicionário com credenciais (pode ser modificado)
             
         Returns:
             Tupla (válido, mensagem_erro)
@@ -82,22 +85,6 @@ class GoogleCloudManager:
         
         if missing_fields:
             return False, f"Campos obrigatórios ausentes: {', '.join(missing_fields)}"
-        
-        # Verificar campos opcionais e avisar se ausentes
-        missing_optional = []
-        for field in self.OPTIONAL_CRED_FIELDS:
-            if field not in creds_dict or creds_dict[field] is None or creds_dict[field] == "":
-                missing_optional.append(field)
-        
-        if missing_optional:
-            self._log(
-                f"Campos opcionais ausentes (recomendado para google-auth >= 2.15): {', '.join(missing_optional)}. "
-                "Será usado valor padrão 'googleapis.com' para universe_domain.",
-                "WARNING"
-            )
-            # Adicionar valores padrão para campos opcionais
-            if 'universe_domain' not in creds_dict or not creds_dict['universe_domain']:
-                creds_dict['universe_domain'] = 'googleapis.com'
         
         # Validar formato do tipo
         if creds_dict.get('type') != 'service_account':
@@ -112,6 +99,23 @@ class GoogleCloudManager:
         private_key = creds_dict.get('private_key', '')
         if not private_key.startswith('-----BEGIN PRIVATE KEY-----'):
             return False, "private_key com formato inválido. Deve começar com '-----BEGIN PRIVATE KEY-----'"
+        
+        # Verificar campos opcionais e adicionar valores padrão se necessário
+        # (isso é feito APÓS a validação para garantir que as credenciais básicas estão corretas)
+        missing_optional = []
+        for field in self.OPTIONAL_CRED_FIELDS:
+            if field not in creds_dict or creds_dict[field] is None or creds_dict[field] == "":
+                missing_optional.append(field)
+        
+        if missing_optional:
+            self._log(
+                f"Campos opcionais ausentes (recomendado para google-auth >= 2.15): {', '.join(missing_optional)}. "
+                "Será usado valor padrão 'googleapis.com' para universe_domain.",
+                "WARNING"
+            )
+            # Adicionar valores padrão para campos opcionais
+            if 'universe_domain' not in creds_dict or not creds_dict['universe_domain']:
+                creds_dict['universe_domain'] = 'googleapis.com'
         
         return True, None
     
