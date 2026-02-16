@@ -262,3 +262,14 @@ Requisitos técnicos
 	• Membro só insere transações e merch
 	• Tokens expiram
 
+15. SOLUÇÃO DE PROBLEMAS
+Se você encontrar erros ao executar a aplicação, consulte o guia de troubleshooting:
+	• docs/TROUBLESHOOTING.md - Guia completo de solução de problemas
+	• docs/SETUP_GOOGLE_SHEETS.md - Configuração do Google Sheets
+	• docs/CHANGES.md - Histórico de mudanças
+
+Erros comuns:
+	• KeyError em st.secrets: Configure .streamlit/secrets.toml corretamente
+	• Erro de conexão Google Sheets: Verifique credenciais e permissões
+	• ModuleNotFoundError: Execute pip install -r requirements.txt
+
