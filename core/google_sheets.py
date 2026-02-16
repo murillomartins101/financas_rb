@@ -62,7 +62,23 @@ def read_sheet(sheet_name: str, worksheet_name: Optional[str] = None) -> pd.Data
         return pd.DataFrame()
         
     except Exception as e:
-        st.error(f"Erro ao ler {sheet_name} ({worksheet_name}): {str(e)}")
+        error_msg = str(e)
+        
+        # Melhorar mensagem de erro para problemas comuns de JWT
+        if "invalid_grant" in error_msg.lower() or "invalid jwt signature" in error_msg.lower():
+            st.error(
+                f"❌ Erro de autenticação JWT ao ler {sheet_name} ({worksheet_name})\n\n"
+                "**Causa:** Assinatura JWT inválida\n\n"
+                "**Soluções:**\n"
+                "1. Verifique se a Service Account ainda existe no Google Cloud Console\n"
+                "2. Gere uma nova chave JSON para a Service Account e atualize as credenciais\n"
+                "3. Verifique se o relógio do sistema está correto\n"
+                "4. Certifique-se de que o arquivo de credenciais está completo e não corrompido\n\n"
+                f"**Erro técnico:** {error_msg}"
+            )
+        else:
+            st.error(f"Erro ao ler {sheet_name} ({worksheet_name}): {error_msg}")
+        
         return pd.DataFrame()
 
 def write_row(sheet_name: str, row_data: List[Any], worksheet_name: Optional[str] = None) -> bool:

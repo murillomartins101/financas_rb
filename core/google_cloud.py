@@ -31,6 +31,11 @@ class GoogleCloudManager:
         'auth_provider_x509_cert_url', 'client_x509_cert_url'
     ]
     
+    # Campos opcionais mas recomendados (para compatibilidade com versões novas)
+    OPTIONAL_CRED_FIELDS = [
+        'universe_domain'  # Necessário para google-auth >= 2.15
+    ]
+    
     def __init__(self):
         self.client = None
         self.spreadsheet = None
@@ -77,6 +82,22 @@ class GoogleCloudManager:
         
         if missing_fields:
             return False, f"Campos obrigatórios ausentes: {', '.join(missing_fields)}"
+        
+        # Verificar campos opcionais e avisar se ausentes
+        missing_optional = []
+        for field in self.OPTIONAL_CRED_FIELDS:
+            if field not in creds_dict or creds_dict[field] is None or creds_dict[field] == "":
+                missing_optional.append(field)
+        
+        if missing_optional:
+            self._log(
+                f"Campos opcionais ausentes (recomendado para google-auth >= 2.15): {', '.join(missing_optional)}. "
+                "Será usado valor padrão 'googleapis.com' para universe_domain.",
+                "WARNING"
+            )
+            # Adicionar valores padrão para campos opcionais
+            if 'universe_domain' not in creds_dict or not creds_dict['universe_domain']:
+                creds_dict['universe_domain'] = 'googleapis.com'
         
         # Validar formato do tipo
         if creds_dict.get('type') != 'service_account':
@@ -238,8 +259,25 @@ class GoogleCloudManager:
                     self.client = gspread.authorize(self.credentials)
                     self._log("Cliente gspread autorizado com sucesso")
                 except Exception as e:
-                    self._log(f"Erro ao autorizar cliente gspread: {e}", "ERROR")
-                    self._connection_error = f"Erro ao autorizar cliente: {str(e)}"
+                    error_str = str(e)
+                    self._log(f"Erro ao autorizar cliente gspread: {error_str}", "ERROR")
+                    
+                    # Tratar erros específicos de JWT
+                    if "invalid_grant" in error_str.lower() or "invalid jwt signature" in error_str.lower():
+                        self._connection_error = (
+                            "Erro de autenticação JWT: Assinatura inválida.\n\n"
+                            "Possíveis causas:\n"
+                            "1. A chave da Service Account foi revogada ou excluída no Google Cloud Console\n"
+                            "2. O relógio do sistema está dessincronizado (diferença > 5 minutos)\n"
+                            "3. A chave privada (private_key) está corrompida ou incompleta\n\n"
+                            "Soluções:\n"
+                            "1. Verifique se a Service Account ainda existe no Google Cloud Console\n"
+                            "2. Gere uma nova chave JSON para a Service Account\n"
+                            "3. Verifique a hora do sistema: 'date' no terminal\n"
+                            "4. Se usar secrets.toml, certifique-se que private_key tem todas as quebras de linha (\\n)"
+                        )
+                    else:
+                        self._connection_error = f"Erro ao autorizar cliente: {error_str}"
                     continue
                 
                 # Obter e validar spreadsheet_id
