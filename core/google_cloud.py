@@ -252,7 +252,7 @@ class GoogleCloudManager:
                 
                 # Se ainda não tem credenciais, retornar erro
                 if not creds_dict:
-                    self._log("Nenhuma fonte de credenciais encontrada", "WARNING")
+                    self._log("Nenhuma fonte de credenciais encontrada", "ERROR")
                     self._connection_error = (
                         "❌ Credenciais do Google Cloud não configuradas.\n\n"
                         "📋 Para configurar, escolha UMA das opções:\n\n"
@@ -267,6 +267,7 @@ class GoogleCloudManager:
                         "   • Configure GOOGLE_CREDENTIALS_JSON com o JSON completo\n\n"
                         "📚 Ajuda: .streamlit/README.md | docs/TROUBLESHOOTING.md"
                     )
+                    logging.error("[GOOGLE_CLOUD] Credenciais não encontradas - nenhuma fonte configurada")
                     return False
                 
                 # Etapa 2: Validar estrutura das credenciais

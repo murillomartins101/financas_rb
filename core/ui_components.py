@@ -130,9 +130,15 @@ def render_sidebar():
         st.markdown("### Conexão")
         
         from core.google_cloud import google_cloud_manager
+        from core.data_loader import data_loader
         connection_status = google_cloud_manager.get_connection_status()
         
+        # Determinar estado atual do sistema
+        is_fallback_mode = hasattr(data_loader, 'use_excel_fallback') and data_loader.use_excel_fallback
+        data_source = st.session_state.get('data_source', 'Desconhecido')
+        
         if connection_status['connected']:
+            # Google Sheets conectado
             st.markdown(
                 f"<div style='background-color: #1a472a; padding: 8px; border-radius: 4px; "
                 f"border-left: 3px solid #3fb950;'>"
@@ -141,7 +147,18 @@ def render_sidebar():
                 f"<small style='color: #8b949e;'>Planilha: {connection_status.get('spreadsheet_title', 'N/A')}</small></div>",
                 unsafe_allow_html=True
             )
+        elif is_fallback_mode and 'fallback' in data_source.lower():
+            # Modo fallback ativo
+            st.markdown(
+                f"<div style='background-color: #4a3820; padding: 8px; border-radius: 4px; "
+                f"border-left: 3px solid #f0ad4e;'>"
+                f"<span style='color: #f0ad4e;'>⚠️ Modo Fallback</span><br/>"
+                f"<small style='color: #8b949e;'>Fonte: {data_source}</small><br/>"
+                f"<small style='color: #f0ad4e;'>Google Sheets indisponível</small></div>",
+                unsafe_allow_html=True
+            )
         else:
+            # Desconectado
             error_msg = connection_status.get('error') or 'Erro desconhecido'
             suggestion = connection_status.get('suggestion') or ''
             last_attempt = connection_status.get('last_attempt')
