@@ -63,7 +63,25 @@ def test_credentials():
         print("✓ Cliente autorizado com sucesso")
         
         # Tentar abrir planilha
-        spreadsheet_id = "1TZDj3ZNfFluXLTlc4hkkvMb0gs17WskzwS9LapR44eI"
+        # Primeiro tenta ler do secrets, depois variável de ambiente, depois usa o padrão
+        spreadsheet_id = None
+        try:
+            # Tentar carregar do secrets.toml
+            import streamlit as st
+            if hasattr(st, 'secrets') and 'spreadsheet_id' in st.secrets:
+                spreadsheet_id = st.secrets.get('spreadsheet_id')
+        except:
+            pass
+        
+        # Fallback para variável de ambiente
+        if not spreadsheet_id:
+            import os
+            spreadsheet_id = os.getenv('SPREADSHEET_ID')
+        
+        # Fallback para ID padrão (pode ser passado como argumento)
+        if not spreadsheet_id:
+            spreadsheet_id = "1TZDj3ZNfFluXLTlc4hkkvMb0gs17WskzwS9LapR44eI"
+        
         print(f"\n⏳ Tentando abrir planilha (ID: {spreadsheet_id})...")
         spreadsheet = client.open_by_key(spreadsheet_id)
         print(f"✓ Planilha aberta com sucesso: '{spreadsheet.title}'")
