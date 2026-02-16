@@ -275,7 +275,7 @@ class GoogleCloudManager:
                             "WARNING"
                         )
                         creds_dict['private_key'] = pk.replace('\\n', '\n')
-                        self._log(f"Após conversão: {creds_dict['private_key'].count(chr(10))} newlines reais")
+                        self._log(f"Após conversão: {creds_dict['private_key'].count('\n')} newlines reais")
                 
                 # Etapa 3: Criar objeto Credentials
                 self._log("Criando objeto de credenciais do Google")
