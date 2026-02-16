@@ -168,19 +168,20 @@ class GoogleCloudManager:
                         continue
                 
                 # Método 2: Usar secrets.toml (recomendado para Streamlit Cloud)
-                elif "google_credentials" in st.secrets:
-                    self._log("Encontradas credenciais em st.secrets['google_credentials']")
+                if not creds_dict:
                     try:
-                        creds_dict = dict(st.secrets["google_credentials"])
-                        creds_source = "st.secrets (secrets.toml)"
-                        self._log("Credenciais carregadas do secrets.toml com sucesso")
+                        if "google_credentials" in st.secrets:
+                            self._log("Encontradas credenciais em st.secrets['google_credentials']")
+                            creds_dict = dict(st.secrets["google_credentials"])
+                            creds_source = "st.secrets (secrets.toml)"
+                            self._log("Credenciais carregadas do secrets.toml com sucesso")
                     except Exception as e:
-                        self._log(f"Erro ao carregar secrets do Streamlit: {e}", "ERROR")
-                        self._connection_error = f"Erro ao carregar st.secrets['google_credentials']: {str(e)}"
-                        continue
+                        self._log(f"Erro ao acessar secrets do Streamlit: {e}", "ERROR")
+                        # Não continue aqui, vá para o método 3
+                        pass
                 
                 # Método 3: Variáveis de ambiente
-                else:
+                if not creds_dict:
                     self._log("Tentando carregar credenciais de variável de ambiente GOOGLE_CREDENTIALS_JSON")
                     creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
                     if creds_json:
@@ -192,16 +193,18 @@ class GoogleCloudManager:
                             self._log(f"Erro ao decodificar JSON da variável de ambiente: {e}", "ERROR")
                             self._connection_error = f"GOOGLE_CREDENTIALS_JSON contém JSON inválido: {str(e)}"
                             continue
-                    else:
-                        self._log("Nenhuma fonte de credenciais encontrada", "ERROR")
-                        self._connection_error = (
-                            "Credenciais do Google Cloud não configuradas. "
-                            "Configure através de:\n"
-                            "1. Arquivo 'google_credentials.json' na raiz do projeto, OU\n"
-                            "2. st.secrets['google_credentials'] no secrets.toml, OU\n"
-                            "3. Variável de ambiente GOOGLE_CREDENTIALS_JSON"
-                        )
-                        return False
+                
+                # Se ainda não tem credenciais, retornar erro
+                if not creds_dict:
+                    self._log("Nenhuma fonte de credenciais encontrada", "ERROR")
+                    self._connection_error = (
+                        "Credenciais do Google Cloud não configuradas. "
+                        "Configure através de:\n"
+                        "1. Arquivo 'google_credentials.json' na raiz do projeto, OU\n"
+                        "2. st.secrets['google_credentials'] no secrets.toml, OU\n"
+                        "3. Variável de ambiente GOOGLE_CREDENTIALS_JSON"
+                    )
+                    return False
                 
                 # Etapa 2: Validar estrutura das credenciais
                 self._log("Validando estrutura das credenciais")
@@ -244,11 +247,15 @@ class GoogleCloudManager:
                 spreadsheet_id = None
                 
                 # Tentar obter de st.secrets
-                if "spreadsheet_id" in st.secrets:
-                    spreadsheet_id = st.secrets.get("spreadsheet_id")
-                    self._log(f"spreadsheet_id encontrado em st.secrets")
-                else:
-                    # Tentar variável de ambiente como fallback
+                try:
+                    if "spreadsheet_id" in st.secrets:
+                        spreadsheet_id = st.secrets.get("spreadsheet_id")
+                        self._log(f"spreadsheet_id encontrado em st.secrets")
+                except Exception as e:
+                    self._log(f"Erro ao acessar st.secrets para spreadsheet_id: {e}", "WARNING")
+                
+                # Tentar variável de ambiente como fallback
+                if not spreadsheet_id:
                     spreadsheet_id = os.getenv("SPREADSHEET_ID")
                     if spreadsheet_id:
                         self._log(f"spreadsheet_id encontrado em variável de ambiente")
