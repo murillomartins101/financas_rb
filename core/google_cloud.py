@@ -31,6 +31,11 @@ class GoogleCloudManager:
         'auth_provider_x509_cert_url', 'client_x509_cert_url'
     ]
     
+    # Campos opcionais mas recomendados (para compatibilidade com versões novas)
+    OPTIONAL_CRED_FIELDS = [
+        'universe_domain'  # Necessário para google-auth >= 2.15
+    ]
+    
     def __init__(self):
         self.client = None
         self.spreadsheet = None
@@ -64,8 +69,11 @@ class GoogleCloudManager:
         """
         Valida se o dicionário de credenciais contém todos os campos necessários
         
+        NOTA: Esta função pode modificar creds_dict adicionando valores padrão
+        para campos opcionais ausentes (ex: universe_domain).
+        
         Args:
-            creds_dict: Dicionário com credenciais
+            creds_dict: Dicionário com credenciais (pode ser modificado)
             
         Returns:
             Tupla (válido, mensagem_erro)
@@ -91,6 +99,23 @@ class GoogleCloudManager:
         private_key = creds_dict.get('private_key', '')
         if not private_key.startswith('-----BEGIN PRIVATE KEY-----'):
             return False, "private_key com formato inválido. Deve começar com '-----BEGIN PRIVATE KEY-----'"
+        
+        # Verificar campos opcionais e adicionar valores padrão se necessário
+        # (isso é feito APÓS a validação para garantir que as credenciais básicas estão corretas)
+        missing_optional = []
+        for field in self.OPTIONAL_CRED_FIELDS:
+            if field not in creds_dict or creds_dict[field] is None or creds_dict[field] == "":
+                missing_optional.append(field)
+        
+        if missing_optional:
+            self._log(
+                f"Campos opcionais ausentes (recomendado para google-auth >= 2.15): {', '.join(missing_optional)}. "
+                "Será usado valor padrão 'googleapis.com' para universe_domain.",
+                "WARNING"
+            )
+            # Adicionar valores padrão para campos opcionais
+            if 'universe_domain' not in creds_dict or not creds_dict['universe_domain']:
+                creds_dict['universe_domain'] = 'googleapis.com'
         
         return True, None
     
@@ -148,23 +173,43 @@ class GoogleCloudManager:
                 
                 # Obter diretório base do projeto
                 base_dir = Path(__file__).parent.parent
-                json_path = base_dir / "google_credentials.json"
                 
                 # Método 1: Usar arquivo JSON local (prioridade para desenvolvimento local)
+                # Tentar google_credentials.json primeiro
+                json_path = base_dir / "google_credentials.json"
+                
+                # Se não existir, procurar por outros arquivos JSON de credenciais na raiz
+                if not json_path.exists():
+                    # Procurar por arquivos JSON que parecem ser credenciais
+                    for candidate in base_dir.glob("*.json"):
+                        # Pular arquivos que claramente não são credenciais
+                        if candidate.name in ['package.json', 'tsconfig.json', 'manifest.json']:
+                            continue
+                        # Verificar se tem campos de service account
+                        try:
+                            with open(candidate, 'r') as f:
+                                test_creds = json.load(f)
+                            if 'type' in test_creds and test_creds.get('type') == 'service_account':
+                                json_path = candidate
+                                self._log(f"Encontrado arquivo de credenciais: {json_path.name}")
+                                break
+                        except:
+                            continue
+                
                 if json_path.exists():
                     self._log(f"Encontrado arquivo de credenciais local: {json_path}")
                     try:
                         with open(json_path, 'r') as f:
                             creds_dict = json.load(f)
-                        creds_source = "arquivo local (google_credentials.json)"
+                        creds_source = f"arquivo local ({json_path.name})"
                         self._log("Credenciais carregadas do arquivo local com sucesso")
                     except json.JSONDecodeError as e:
                         self._log(f"Erro ao decodificar JSON do arquivo local: {e}", "ERROR")
-                        self._connection_error = f"Arquivo google_credentials.json contém JSON inválido: {str(e)}"
+                        self._connection_error = f"Arquivo {json_path.name} contém JSON inválido: {str(e)}"
                         continue
                     except Exception as e:
                         self._log(f"Erro ao ler arquivo local: {e}", "ERROR")
-                        self._connection_error = f"Erro ao ler google_credentials.json: {str(e)}"
+                        self._connection_error = f"Erro ao ler {json_path.name}: {str(e)}"
                         continue
                 
                 # Método 2: Usar secrets.toml (recomendado para Streamlit Cloud)
@@ -238,8 +283,25 @@ class GoogleCloudManager:
                     self.client = gspread.authorize(self.credentials)
                     self._log("Cliente gspread autorizado com sucesso")
                 except Exception as e:
-                    self._log(f"Erro ao autorizar cliente gspread: {e}", "ERROR")
-                    self._connection_error = f"Erro ao autorizar cliente: {str(e)}"
+                    error_str = str(e)
+                    self._log(f"Erro ao autorizar cliente gspread: {error_str}", "ERROR")
+                    
+                    # Tratar erros específicos de JWT
+                    if "invalid_grant" in error_str.lower() or "invalid jwt signature" in error_str.lower():
+                        self._connection_error = (
+                            "Erro de autenticação JWT: Assinatura inválida.\n\n"
+                            "Possíveis causas:\n"
+                            "1. A chave da Service Account foi revogada ou excluída no Google Cloud Console\n"
+                            "2. O relógio do sistema está dessincronizado (diferença > 5 minutos)\n"
+                            "3. A chave privada (private_key) está corrompida ou incompleta\n\n"
+                            "Soluções:\n"
+                            "1. Verifique se a Service Account ainda existe no Google Cloud Console\n"
+                            "2. Gere uma nova chave JSON para a Service Account\n"
+                            "3. Verifique a hora do sistema: 'date' no terminal\n"
+                            "4. Se usar secrets.toml, certifique-se que private_key tem todas as quebras de linha (\\n)"
+                        )
+                    else:
+                        self._connection_error = f"Erro ao autorizar cliente: {error_str}"
                     continue
                 
                 # Obter e validar spreadsheet_id
