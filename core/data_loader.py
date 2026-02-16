@@ -29,15 +29,29 @@ class DataLoader:
     def _load_data_config(self):
         """
         Carrega configuração de fonte de dados de st.secrets
+        
+        IMPORTANTE: Se data_config não estiver presente em secrets.toml,
+        o sistema usa valores padrão seguros (strict mode):
+        - primary_source = "google"
+        - allow_fallback = False
+        
+        Isso garante que erros de infraestrutura sejam visíveis em produção.
+        Para desenvolvimento, configure explicitamente allow_fallback = true.
         """
         try:
             if "data_config" in st.secrets:
                 self.primary_source = st.secrets["data_config"].get("primary_source", "google")
                 self.allow_fallback = st.secrets["data_config"].get("allow_fallback", False)
+                logging.info(f"[DATA_LOADER] Configuração carregada: primary_source={self.primary_source}, allow_fallback={self.allow_fallback}")
             else:
                 # Valores padrão se não houver configuração
                 self.primary_source = "google"
                 self.allow_fallback = False
+                logging.info(
+                    "[DATA_LOADER] Usando configuração padrão (strict mode): "
+                    "primary_source=google, allow_fallback=false. "
+                    "Configure [data_config] em secrets.toml para alterar."
+                )
         except Exception as e:
             # Em caso de erro, usar valores padrão seguros
             logging.warning(f"Erro ao carregar data_config de secrets: {e}")
