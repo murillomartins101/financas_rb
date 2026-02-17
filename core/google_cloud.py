@@ -488,7 +488,7 @@ class GoogleCloudManager:
             
             return {
                 'connected': False,
-                'source': 'Excel local',
+                'source': 'Não conectado',
                 'spreadsheet_title': None,
                 'error': error_str,
                 'last_attempt': self._last_attempt_time,

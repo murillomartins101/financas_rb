@@ -7,31 +7,19 @@ from core.google_cloud import google_cloud_manager
 # Removi a importação duplicada e mantive a definição local conforme seu exemplo
 import time
 
-# ID da sua planilha financas_rb
-SHEET_NAMES = {
-    "financas": "1TZDj3ZNfFluXLTlc4hkkvMb0gs17WskzwS9LapR44eI"
-}
-
-def read_sheet(sheet_name: str, worksheet_name: Optional[str] = None) -> pd.DataFrame:
+def read_sheet(worksheet_name: str) -> pd.DataFrame:
     """
     Lê dados de uma aba do Google Sheets e converte tipos automaticamente.
+    Utiliza a planilha já aberta pelo google_cloud_manager.
     """
     try:
-        if not google_cloud_manager.client:
+        # Verificar se a planilha foi inicializada com sucesso
+        if not google_cloud_manager.spreadsheet:
             if not google_cloud_manager.initialize():
                 return pd.DataFrame()
         
-        # 1. Obter o ID da planilha
-        spreadsheet_id = SHEET_NAMES.get(sheet_name, sheet_name)
-        
-        # 2. Abrir a planilha e a aba específica
-        # Assumindo que seu manager tem acesso ao client do gspread
-        spreadsheet = google_cloud_manager.client.open_by_key(spreadsheet_id)
-        
-        if worksheet_name:
-            worksheet = spreadsheet.worksheet(worksheet_name)
-        else:
-            worksheet = spreadsheet.get_worksheet(0) # Padrão: primeira aba
+        # Obter a aba (worksheet) da planilha já aberta
+        worksheet = google_cloud_manager.get_worksheet(worksheet_name)
         
         if worksheet:
             # Obter registros (já mapeia cabeçalho para chaves de dicionário)
@@ -67,13 +55,13 @@ def read_sheet(sheet_name: str, worksheet_name: Optional[str] = None) -> pd.Data
         # Melhorar mensagem de erro para problemas comuns de JWT
         if "invalid_grant" in error_msg.lower() or "invalid jwt signature" in error_msg.lower():
             st.error(
-                f"❌ Erro de autenticação JWT ao ler {sheet_name} ({worksheet_name})\n\n"
+                f"❌ Erro de autenticação JWT ao ler a aba '{worksheet_name}'\n\n"
                 "**Causa:** Assinatura JWT inválida\n\n"
                 "**Soluções:**\n"
                 "1. Verifique se a Service Account ainda existe no Google Cloud Console\n"
                 "2. Gere uma nova chave JSON para a Service Account e atualize as credenciais\n"
                 "3. Verifique se o relógio do sistema está correto\n"
-                "4. Certifique-se de que o arquivo de credenciais está completo e não corrompido\n\n"
+                "4. Certifique-se de que a `private_key` no secrets.toml está completa e não corrompida\n\n"
                 f"**Erro técnico:** {error_msg}"
             )
         else:
@@ -81,14 +69,12 @@ def read_sheet(sheet_name: str, worksheet_name: Optional[str] = None) -> pd.Data
         
         return pd.DataFrame()
 
-def write_row(sheet_name: str, row_data: List[Any], worksheet_name: Optional[str] = None) -> bool:
+def write_row(worksheet_name: str, row_data: List[Any]) -> bool:
     try:
-        if not google_cloud_manager.client:
+        if not google_cloud_manager.spreadsheet:
             if not google_cloud_manager.initialize(): return False
         
-        spreadsheet_id = SHEET_NAMES.get(sheet_name, sheet_name)
-        spreadsheet = google_cloud_manager.client.open_by_key(spreadsheet_id)
-        worksheet = spreadsheet.worksheet(worksheet_name) if worksheet_name else spreadsheet.get_worksheet(0)
+        worksheet = google_cloud_manager.get_worksheet(worksheet_name)
         
         if worksheet:
             worksheet.append_row(row_data)
@@ -99,21 +85,19 @@ def write_row(sheet_name: str, row_data: List[Any], worksheet_name: Optional[str
         st.error(f"Erro ao escrever: {str(e)}")
         return False
 
-def update_row(sheet_name: str, row_index: int, row_data: List[Any], worksheet_name: Optional[str] = None) -> bool:
+def update_row(worksheet_name: str, row_index: int, row_data: List[Any]) -> bool:
     """ row_index deve ser base 1 (ex: linha 2 é a primeira após cabeçalho) """
     try:
-        if not google_cloud_manager.client:
+        if not google_cloud_manager.spreadsheet:
             if not google_cloud_manager.initialize(): return False
         
-        spreadsheet_id = SHEET_NAMES.get(sheet_name, sheet_name)
-        spreadsheet = google_cloud_manager.client.open_by_key(spreadsheet_id)
-        worksheet = spreadsheet.worksheet(worksheet_name) if worksheet_name else spreadsheet.get_worksheet(0)
+        worksheet = google_cloud_manager.get_worksheet(worksheet_name)
         
         if worksheet:
             # gspread moderno usa list of lists para update
             range_label = f"A{row_index}" 
             worksheet.update(range_name=range_label, values=[row_data])
-            log_audit("UPDATE", f"{sheet_name}:{worksheet_name}", row_data, row_index)
+            log_audit("UPDATE", worksheet_name, row_data, row_index)
             return True
         return False
     except Exception as e:
@@ -127,7 +111,7 @@ def sync_all() -> Dict[str, bool]:
     results = {}
     
     for aba in abas_para_sync:
-        df = read_sheet("financas", aba)
+        df = read_sheet(aba)
         if not df.empty:
             st.session_state[f"financas_{aba}_data"] = df
             results[aba] = True
@@ -164,7 +148,7 @@ def get_all_data() -> Dict[str, pd.DataFrame]:
         if cache_key in st.session_state and not cache_expired:
             data[aba] = st.session_state[cache_key]
         else:
-            df = read_sheet("financas", aba)
+            df = read_sheet(aba)
             st.session_state[cache_key] = df
             data[aba] = df
             
