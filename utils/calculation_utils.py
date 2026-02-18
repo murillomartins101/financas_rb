@@ -58,7 +58,7 @@ def safe_percentage_change(
         return None
     
     # Calcula o percentual de mudança
-    change_pct = ((current_value - previous_value) / abs(previous_value)) * 100
+    change_pct = ((current_value - previous_value) / previous_value) * 100
     
     # Limita aos valores máximos e mínimos
     if not math.isfinite(change_pct):
@@ -234,7 +234,7 @@ def calculate_margin_safely(
         return None
     
     profit = revenue - expenses
-    margin = (profit / abs(revenue)) * 100
+    margin = (profit / revenue) * 100
     
     if not math.isfinite(margin):
         return None

@@ -16,6 +16,7 @@ from core.metrics import calculate_kpis_with_explanation
 from core.filters import DataFilter, display_current_filters
 from utils.calculation_utils import (
     safe_percentage_change,
+    safe_percentage,
     format_percentage_change,
     is_reliable_trend,
     calculate_margin_safely,
@@ -581,7 +582,6 @@ def main():
     valor_efetivo = valor_bruto_shows - custos_operacionais
     
     # Calcular percentual retido de forma segura
-    from utils.calculation_utils import safe_percentage
     percentual_retido = safe_percentage(valor_efetivo, valor_bruto_shows, default=0.0, min_threshold=1.0)
     
     col_valor1, col_valor2, col_valor3 = st.columns(3)

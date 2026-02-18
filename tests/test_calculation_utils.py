@@ -231,7 +231,7 @@ def test_extreme_cases():
             'name': 'Mês com valor muito baixo',
             'current': 0.07,
             'previous': 3180.0,
-            'expected': -100.0,  # Queda extrema, limitada a -100%
+            'expected': -99.998,  # Queda extrema (não limitada pois previous > 10)
         },
         {
             'name': 'Mês zero após mês normal',

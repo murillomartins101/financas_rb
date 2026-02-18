@@ -1,4 +1,4 @@
-# Dashboard Metrics Calculation Fixes - PR #[NUMBER]
+# Dashboard Metrics Calculation Fixes
 
 ## Resumo
 
