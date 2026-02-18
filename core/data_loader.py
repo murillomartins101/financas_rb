@@ -372,12 +372,6 @@ class DataLoader:
 
         df["valor"] = _parse_brl_number(df["valor"])
 
-        # IMPORTANTE:
-        # Se você remover ESTORNADO aqui, ele "some" de telas (CRUD e análises).
-        # Mantive seu comportamento, mas recomendo filtrar no dashboard e não no loader.
-        if "payment_status" in df.columns:
-            df = df[df["payment_status"].astype(str).str.strip() != "ESTORNADO"]
-
         # remove duplicados por ID
         if "id" in df.columns:
             df = df.drop_duplicates(subset=["id"], keep="last")

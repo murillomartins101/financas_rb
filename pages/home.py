@@ -282,13 +282,21 @@ def create_gauge_chart(value, max_value, title, color='#58a6ff'):
     return fig
 
 def get_monthly_data(transactions_df):
-    """Agrupa transacoes por mes"""
+    """Agrupa transacoes por mes — apenas transações PAGAS"""
     if transactions_df.empty or 'data' not in transactions_df.columns:
         return pd.DataFrame()
     
     df = transactions_df.copy()
     df['data'] = pd.to_datetime(df['data'], errors='coerce')
     df = df.dropna(subset=['data'])
+    
+    if df.empty:
+        return pd.DataFrame()
+    
+    # CORREÇÃO: filtrar apenas transações com payment_status == 'PAGO'
+    # para garantir consistência com os cards KPI
+    if 'payment_status' in df.columns:
+        df = df[df['payment_status'].astype(str).str.strip() == 'PAGO']
     
     if df.empty:
         return pd.DataFrame()
