@@ -6,7 +6,7 @@ import streamlit as st
 
 from core.auth import check_password, init_session_state
 from core.ui_components import setup_page_config, render_sidebar, render_footer
-from app import (
+from core.navigation import (
     show_home_page,
     show_shows_page,
     show_transacoes_page,

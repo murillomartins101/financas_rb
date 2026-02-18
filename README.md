@@ -2,11 +2,90 @@ ROCKBUZZ FINANCE (VERSÃO FINAL)
 
 ## 🚀 INÍCIO RÁPIDO
 
-**Novo usuário?** Comece aqui: [QUICKSTART.md](QUICKSTART.md)
+**Novo usuário?** Siga os passos abaixo para configurar e rodar o app localmente.
 
-**Problemas com credenciais?** Veja: [.streamlit/README.md](.streamlit/README.md)
+### Pré-requisitos
 
-**Erros ou problemas?** Consulte: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+- Python 3.10 ou superior
+- pip (gerenciador de pacotes Python)
+- Conta no Google Cloud com Service Account configurada (para integração com Google Sheets)
+
+### Configuração Local (Passo a Passo)
+
+1. **Clone o repositório**
+   ```bash
+   git clone https://github.com/murillomartins101/financas_rb.git
+   cd financas_rb
+   ```
+
+2. **Crie e ative um ambiente virtual**
+   ```bash
+   # Windows
+   python -m venv venv
+   venv\Scripts\activate
+
+   # Linux/Mac
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. **Instale as dependências**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure as credenciais do Google Sheets**
+   
+   O app requer credenciais para conectar ao Google Sheets. Existem duas opções:
+
+   **Opção A: Usar `.streamlit/secrets.toml` (RECOMENDADO)**
+   
+   a. Copie o arquivo de exemplo:
+   ```bash
+   cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+   ```
+   
+   b. Edite `.streamlit/secrets.toml` e preencha com suas credenciais reais:
+   - `spreadsheet_id`: ID da sua planilha do Google Sheets
+   - `[google_credentials]`: Credenciais da Service Account do Google Cloud
+   
+   c. **IMPORTANTE:** NUNCA faça commit do arquivo `.streamlit/secrets.toml` real (ele já está no `.gitignore`)
+
+   **Opção B: Usar arquivo JSON local**
+   
+   a. Coloque o arquivo de credenciais da Service Account como `google_credentials.json` na raiz do projeto
+   
+   b. Configure a variável de ambiente:
+   ```bash
+   # Windows
+   set SPREADSHEET_ID=seu_id_da_planilha_aqui
+
+   # Linux/Mac
+   export SPREADSHEET_ID=seu_id_da_planilha_aqui
+   ```
+
+   Para mais detalhes sobre como obter as credenciais, veja:
+   - [Tutorial completo de configuração do Google Sheets](docs/SETUP_GOOGLE_SHEETS.md)
+   - [Guia da configuração de secrets](.streamlit/README.md)
+
+5. **Execute o aplicativo**
+   ```bash
+   streamlit run app.py
+   ```
+   
+   O app será aberto automaticamente no navegador em `http://localhost:8501`
+
+### Troubleshooting
+
+**Problemas com credenciais?** Consulte:
+- [.streamlit/README.md](.streamlit/README.md) - Configuração de secrets
+- [docs/SETUP_GOOGLE_SHEETS.md](docs/SETUP_GOOGLE_SHEETS.md) - Tutorial do Google Sheets
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Solução de problemas comuns
+
+**Erros comuns:**
+- `KeyError em st.secrets`: Verifique se criou o arquivo `.streamlit/secrets.toml`
+- `Erro de conexão Google Sheets`: Verifique credenciais e permissões da planilha
+- `ModuleNotFoundError`: Execute `pip install -r requirements.txt`
 
 ---
 

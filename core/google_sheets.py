@@ -65,7 +65,7 @@ def read_sheet(worksheet_name: str) -> pd.DataFrame:
                 f"**Erro técnico:** {error_msg}"
             )
         else:
-            st.error(f"Erro ao ler {sheet_name} ({worksheet_name}): {error_msg}")
+            st.error(f"Erro ao ler aba '{worksheet_name}': {error_msg}")
         
         return pd.DataFrame()
 
@@ -78,7 +78,7 @@ def write_row(worksheet_name: str, row_data: List[Any]) -> bool:
         
         if worksheet:
             worksheet.append_row(row_data)
-            log_audit("INSERT", f"{sheet_name}:{worksheet_name}", row_data)
+            log_audit("INSERT", worksheet_name, row_data)
             return True
         return False
     except Exception as e:
