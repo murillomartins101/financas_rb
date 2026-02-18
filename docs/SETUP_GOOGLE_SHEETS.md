@@ -213,7 +213,7 @@ streamlit run test_connection.py
 
 ---
 
-## 🌐 Deployment no Streamlit Cloud
+## 🌐 Deploy no Streamlit Cloud
 
 Após configurar as credenciais localmente, você pode fazer deploy do app no Streamlit Cloud.
 

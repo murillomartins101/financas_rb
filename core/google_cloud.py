@@ -288,7 +288,8 @@ class GoogleCloudManager:
                                 error_parts.append(
                                     "⚠️  O arquivo .streamlit/secrets.toml não contém 'spreadsheet_id'.\n"
                                 )
-                    except:
+                    except Exception:
+                        # Ignorar erros ao verificar st.secrets
                         pass
                     
                     error_parts.append(
