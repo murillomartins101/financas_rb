@@ -160,9 +160,10 @@ class DataValidator:
             try:
                 inicio = DataValidator._parse_date(rule_data['vigencia_inicio'])
                 fim = DataValidator._parse_date(rule_data['vigencia_fim'])
-                if fim < inicio:
+                if inicio and fim and fim < inicio:
                     return False, "Data de fim deve ser posterior à data de início"
-            except:
+            except (ValueError, TypeError, AttributeError) as e:
+                # Erro ao fazer parse das datas - já validadas anteriormente
                 pass
         
         return True, "Regra de rateio válida"
@@ -302,17 +303,14 @@ class DataValidator:
             return True
         
         if isinstance(date_value, str):
-            try:
-                # Tentar múltiplos formatos
-                formats = ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y']
-                for fmt in formats:
-                    try:
-                        datetime.strptime(date_value, fmt)
-                        return True
-                    except ValueError:
-                        continue
-            except:
-                return False
+            # Tentar múltiplos formatos
+            formats = ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y']
+            for fmt in formats:
+                try:
+                    datetime.strptime(date_value, fmt)
+                    return True
+                except ValueError:
+                    continue
         
         return False
     

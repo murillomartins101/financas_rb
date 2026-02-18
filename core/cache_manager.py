@@ -129,7 +129,8 @@ class CacheManager:
             for file in self.cache_dir.glob("*.pkl"):
                 try:
                     file.unlink()
-                except:
+                except (OSError, PermissionError):
+                    # Arquivo pode estar em uso ou sem permissão
                     pass
     
     def cleanup_expired(self):
@@ -219,11 +220,11 @@ class CacheManager:
                     return None
                 
                 return cache_data.get('value')
-            except:
-                # Em caso de erro, remover arquivo corrompido
+            except (pickle.UnpicklingError, EOFError, AttributeError, ImportError) as e:
+                # Em caso de erro de desserialização, remover arquivo corrompido
                 try:
                     cache_file.unlink()
-                except:
+                except (OSError, PermissionError):
                     pass
         
         return None
@@ -265,7 +266,8 @@ class CacheManager:
         if cache_file.exists():
             try:
                 cache_file.unlink()
-            except:
+            except (OSError, PermissionError):
+                # Arquivo pode estar em uso ou sem permissão
                 pass
     
     def _invalidate_disk_cache(self, pattern: str):
@@ -282,8 +284,8 @@ class CacheManager:
                 
                 if pattern in cache_data.get('key', ''):
                     cache_file.unlink()
-            except:
-                # Ignorar arquivos corrompidos
+            except (OSError, pickle.UnpicklingError, EOFError, KeyError):
+                # Ignorar arquivos corrompidos ou inacessíveis
                 pass
     
     def _cleanup_disk_cache(self):
@@ -299,11 +301,12 @@ class CacheManager:
                 
                 if cache_data.get('expires', 0) < current_time:
                     cache_file.unlink()
-            except:
-                # Remover arquivos corrompidos
+            except (OSError, pickle.UnpicklingError, EOFError, KeyError):
+                # Remover arquivos corrompidos ou inacessíveis
                 try:
                     cache_file.unlink()
-                except:
+                except (OSError, PermissionError):
+                    # Não é possível remover o arquivo
                     pass
     
     def _get_cache_file(self, key: str) -> Path:

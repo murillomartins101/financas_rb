@@ -33,8 +33,8 @@ def setup_page_config():
         with open("assets/styles.css", "r") as f:
             css = f.read()
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-    except:
-        # CSS fallback
+    except (FileNotFoundError, IOError):
+        # CSS fallback - arquivo não encontrado ou erro de leitura
         st.markdown("""
         <style>
         .main-header {
@@ -56,8 +56,9 @@ def render_sidebar():
         with col1:
             try:
                 st.image("assets/logo.png", width=50)
-            except:
-                st.markdown("RF")
+            except (FileNotFoundError, IOError):
+                # Logo não encontrada - usar placeholder
+                st.markdown("🎸")
         with col2:
             st.markdown("### Rockbuzz Finance")
         

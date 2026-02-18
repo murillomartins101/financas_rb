@@ -64,21 +64,11 @@ def check_password() -> bool:
     return False
 
 def validate_credentials(username: str, password: str) -> bool:
-    """Versão simplificada para desenvolvimento"""
+    """
+    Valida credenciais do usuário.
+    Tenta usar secrets.toml primeiro, se falhar usa credenciais de desenvolvimento.
+    """
     
-    # Lista de usuários e senhas simples
-    valid_users = {
-        "admin": "admin123",
-        "Murillo": "murillo123",
-        "Tay": "tay123",
-        "Everton": "everton123",
-        "Helio": "helio123",
-        "Kiko": "kiko123",
-        "Naldo": "naldo123"
-    }
-    
-    return username in valid_users and valid_users[username] == password
-
     try:
         # Carregar credenciais do secrets.toml
         credentials = st.secrets.get("credentials", {})
@@ -90,8 +80,20 @@ def validate_credentials(username: str, password: str) -> bool:
             return stored_hash == input_hash
         
         return False
-    except:
-        return False
+    except Exception:
+        # Fallback para credenciais de desenvolvimento
+        # IMPORTANTE: Remover em produção!
+        valid_users = {
+            "admin": "admin123",
+            "Murillo": "murillo123",
+            "Tay": "tay123",
+            "Everton": "everton123",
+            "Helio": "helio123",
+            "Kiko": "kiko123",
+            "Naldo": "naldo123"
+        }
+        
+        return username in valid_users and valid_users[username] == password
 
 def create_auth_token(username: str) -> str:
     """
