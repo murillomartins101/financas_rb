@@ -141,20 +141,21 @@ def test_category_matching():
     data = load_test_data()
     trans = data['transactions']
     
+    # Import constants from metrics module
+    from core.metrics import MUSICIAN_PAYOUT_CATEGORIES
+    
     # Check for musician payment categories
-    cache_categories = ['CACHÊS-MÚSICOS', 'PAYOUT_MUSICOS']
+    print(f"\nChecking for musician payment categories: {MUSICIAN_PAYOUT_CATEGORIES}")
     
-    print(f"\nChecking for musician payment categories: {cache_categories}")
-    
-    for cat in cache_categories:
+    for cat in MUSICIAN_PAYOUT_CATEGORIES:
         count = len(trans[trans['categoria'] == cat])
         if count > 0:
             total = trans[trans['categoria'] == cat]['valor'].sum()
             print(f"  Found {cat}: {count} transactions, total R$ {total:,.2f}")
     
-    # Calculate using metrics class
+    # Calculate using metrics class public method
     metrics = FinancialMetrics(data)
-    cache_total = metrics._calculate_total_cache_musicos(trans)
+    cache_total = metrics.calculate_total_cache_musicos(trans)
     
     print(f"\nTotal cache músicos calculated: R$ {cache_total:,.2f}")
     

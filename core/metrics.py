@@ -19,6 +19,15 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
+# Constantes para validação de dados
+VALID_SHOW_STATUS = ['REALIZADO', 'CONFIRMADO']
+VALID_TRANSACTION_TYPES = ['ENTRADA', 'SAIDA']
+VALID_PAYMENT_STATUS = ['PAGO', 'NÃO RECEBIDO', 'ESTORNADO', 'NÃO PAGO']
+
+# Constantes para categorias de despesas
+MUSICIAN_PAYOUT_CATEGORIES = ['CACHÊS-MÚSICOS', 'PAYOUT_MUSICOS']
+
+
 def validate_data_integrity(data: Dict[str, pd.DataFrame]) -> Dict[str, List[str]]:
     """
     Valida a integridade dos dados carregados
@@ -45,11 +54,10 @@ def validate_data_integrity(data: Dict[str, pd.DataFrame]) -> Dict[str, List[str
         
         # Validar status
         if 'status' in shows.columns:
-            valid_status = ['REALIZADO', 'CONFIRMADO']
-            invalid = shows[~shows['status'].isin(valid_status)]
+            invalid = shows[~shows['status'].isin(VALID_SHOW_STATUS)]
             if len(invalid) > 0:
                 warnings_dict['warnings'].append(
-                    f"Shows: {len(invalid)} registros com status inválido (esperado: {valid_status})"
+                    f"Shows: {len(invalid)} registros com status inválido (esperado: {VALID_SHOW_STATUS})"
                 )
     
     # Validar transactions
@@ -62,17 +70,15 @@ def validate_data_integrity(data: Dict[str, pd.DataFrame]) -> Dict[str, List[str
         
         # Validar tipo
         if 'tipo' in trans.columns:
-            valid_tipos = ['ENTRADA', 'SAIDA']
-            invalid = trans[~trans['tipo'].isin(valid_tipos)]
+            invalid = trans[~trans['tipo'].isin(VALID_TRANSACTION_TYPES)]
             if len(invalid) > 0:
                 warnings_dict['warnings'].append(
-                    f"Transactions: {len(invalid)} registros com tipo inválido (esperado: {valid_tipos})"
+                    f"Transactions: {len(invalid)} registros com tipo inválido (esperado: {VALID_TRANSACTION_TYPES})"
                 )
         
         # Validar payment_status
         if 'payment_status' in trans.columns:
-            valid_status = ['PAGO', 'NÃO RECEBIDO', 'ESTORNADO', 'NÃO PAGO']
-            invalid = trans[~trans['payment_status'].isin(valid_status)]
+            invalid = trans[~trans['payment_status'].isin(VALID_PAYMENT_STATUS)]
             if len(invalid) > 0:
                 warnings_dict['warnings'].append(
                     f"Transactions: {len(invalid)} registros com payment_status inválido"
@@ -142,7 +148,7 @@ class FinancialMetrics:
         )
         
         # KPI 4: Total de cachê de músicos
-        kpis['total_cache_musicos'] = self._calculate_total_cache_musicos(filtered_transactions)
+        kpis['total_cache_musicos'] = self.calculate_total_cache_musicos(filtered_transactions)
         
         # KPI 5: Total geral de despesas
         kpis['total_despesas'] = self._calculate_total_despesas(filtered_transactions)
@@ -281,14 +287,12 @@ class FinancialMetrics:
             return total_entradas / total_shows
         return 0.0
     
-    def _calculate_total_cache_musicos(self, transactions_df: pd.DataFrame) -> float:
+    def calculate_total_cache_musicos(self, transactions_df: pd.DataFrame) -> float:
         """
-        KPI 4: Total de cachê de músicos
-        Soma valores de transações do tipo SAÍDA com categoria CACHÊS-MÚSICOS ou PAYOUT_MUSICOS
+        KPI 4: Total de cachê de músicos (método público para testes)
+        Soma valores de transações do tipo SAÍDA com categoria de músicos
         
-        IMPORTANTE: Suporta múltiplas convenções de nomenclatura:
-        - CACHÊS-MÚSICOS (formato original)
-        - PAYOUT_MUSICOS (formato alternativo)
+        IMPORTANTE: Suporta múltiplas convenções de nomenclatura definidas em MUSICIAN_PAYOUT_CATEGORIES
         
         Args:
             transactions_df: DataFrame de transações filtrado
@@ -302,7 +306,7 @@ class FinancialMetrics:
         # Filtrar cachês de músicos (suporta múltiplas nomenclaturas)
         cache_musicos = transactions_df[
             (transactions_df['tipo'] == 'SAIDA') & 
-            (transactions_df['categoria'].isin(['CACHÊS-MÚSICOS', 'PAYOUT_MUSICOS'])) &
+            (transactions_df['categoria'].isin(MUSICIAN_PAYOUT_CATEGORIES)) &
             (transactions_df['payment_status'] == 'PAGO')
         ]
         
@@ -704,7 +708,7 @@ def calculate_kpis_with_explanation(data: Dict[str, pd.DataFrame],
         'total_cache_musicos': {
             'valor': kpis['total_cache_musicos'],
             'explicacao': 'Total pago em cachês para músicos',
-            'formula': 'SUM(transactions[categoria IN ("CACHÊS-MÚSICOS", "PAYOUT_MUSICOS") & payment_status=="PAGO"].valor)',
+            'formula': f'SUM(transactions[categoria IN {MUSICIAN_PAYOUT_CATEGORIES} & payment_status=="PAGO"].valor)',
             'unidade': 'R$'
         },
         'total_despesas': {
