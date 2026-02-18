@@ -1,6 +1,11 @@
 """
 Cálculo de KPIs e métricas financeiras
 Implementa todas as métricas obrigatórias da especificação
+
+CORREÇÕES IMPLEMENTADAS:
+- Total Despesas agora filtra apenas payment_status == 'PAGO' (antes: != 'ESTORNADO')
+- Cache Músicos suporta múltiplas nomenclaturas (CACHÊS-MÚSICOS, PAYOUT_MUSICOS)
+- Adicionada validação de integridade de dados
 """
 
 import pandas as pd
@@ -13,6 +18,83 @@ from sklearn.linear_model import LinearRegression
 import warnings
 warnings.filterwarnings('ignore')
 
+
+# Constantes para validação de dados
+VALID_SHOW_STATUS = ['REALIZADO', 'CONFIRMADO']
+VALID_TRANSACTION_TYPES = ['ENTRADA', 'SAIDA']
+VALID_PAYMENT_STATUS = ['PAGO', 'NÃO RECEBIDO', 'ESTORNADO', 'NÃO PAGO']
+
+# Constantes para categorias de despesas
+MUSICIAN_PAYOUT_CATEGORIES = ['CACHÊS-MÚSICOS', 'PAYOUT_MUSICOS']
+
+
+def validate_data_integrity(data: Dict[str, pd.DataFrame]) -> Dict[str, List[str]]:
+    """
+    Valida a integridade dos dados carregados
+    
+    Args:
+        data: Dicionário com DataFrames
+        
+    Returns:
+        Dicionário com lista de warnings por categoria
+    """
+    warnings_dict = {
+        'critical': [],
+        'warnings': [],
+        'info': []
+    }
+    
+    # Validar shows
+    if 'shows' in data and not data['shows'].empty:
+        shows = data['shows']
+        required_cols = ['show_id', 'data_show', 'status']
+        missing = [c for c in required_cols if c not in shows.columns]
+        if missing:
+            warnings_dict['critical'].append(f"Shows: colunas ausentes: {missing}")
+        
+        # Validar status
+        if 'status' in shows.columns:
+            invalid = shows[~shows['status'].isin(VALID_SHOW_STATUS)]
+            if len(invalid) > 0:
+                warnings_dict['warnings'].append(
+                    f"Shows: {len(invalid)} registros com status inválido (esperado: {VALID_SHOW_STATUS})"
+                )
+    
+    # Validar transactions
+    if 'transactions' in data and not data['transactions'].empty:
+        trans = data['transactions']
+        required_cols = ['tipo', 'valor', 'payment_status']
+        missing = [c for c in required_cols if c not in trans.columns]
+        if missing:
+            warnings_dict['critical'].append(f"Transactions: colunas ausentes: {missing}")
+        
+        # Validar tipo
+        if 'tipo' in trans.columns:
+            invalid = trans[~trans['tipo'].isin(VALID_TRANSACTION_TYPES)]
+            if len(invalid) > 0:
+                warnings_dict['warnings'].append(
+                    f"Transactions: {len(invalid)} registros com tipo inválido (esperado: {VALID_TRANSACTION_TYPES})"
+                )
+        
+        # Validar payment_status
+        if 'payment_status' in trans.columns:
+            invalid = trans[~trans['payment_status'].isin(VALID_PAYMENT_STATUS)]
+            if len(invalid) > 0:
+                warnings_dict['warnings'].append(
+                    f"Transactions: {len(invalid)} registros com payment_status inválido"
+                )
+        
+        # Validar valores
+        if 'valor' in trans.columns:
+            null_values = trans['valor'].isna().sum()
+            if null_values > 0:
+                warnings_dict['warnings'].append(
+                    f"Transactions: {null_values} registros com valor nulo"
+                )
+    
+    return warnings_dict
+
+
 class FinancialMetrics:
     """
     Calculadora de métricas financeiras da banda
@@ -24,6 +106,18 @@ class FinancialMetrics:
         self.transactions_df = data.get('transactions', pd.DataFrame())
         self.payout_rules_df = data.get('payout_rules', pd.DataFrame())
         self.members_df = data.get('members', pd.DataFrame())
+        
+        # Validar dados na inicialização
+        self._validation_warnings = validate_data_integrity(data)
+    
+    def get_validation_warnings(self) -> Dict[str, List[str]]:
+        """
+        Retorna warnings de validação de dados
+        
+        Returns:
+            Dicionário com listas de warnings por severidade
+        """
+        return self._validation_warnings
     
     def calculate_all_kpis(self, start_date: Optional[datetime] = None,
                           end_date: Optional[datetime] = None) -> Dict[str, float]:
@@ -54,7 +148,7 @@ class FinancialMetrics:
         )
         
         # KPI 4: Total de cachê de músicos
-        kpis['total_cache_musicos'] = self._calculate_total_cache_musicos(filtered_transactions)
+        kpis['total_cache_musicos'] = self.calculate_total_cache_musicos(filtered_transactions)
         
         # KPI 5: Total geral de despesas
         kpis['total_despesas'] = self._calculate_total_despesas(filtered_transactions)
@@ -193,10 +287,12 @@ class FinancialMetrics:
             return total_entradas / total_shows
         return 0.0
     
-    def _calculate_total_cache_musicos(self, transactions_df: pd.DataFrame) -> float:
+    def calculate_total_cache_musicos(self, transactions_df: pd.DataFrame) -> float:
         """
-        KPI 4: Total de cachê de músicos
-        Soma valores de transações do tipo SAÍDA com categoria CACHÊS-MÚSICOS
+        KPI 4: Total de cachê de músicos (método público para testes)
+        Soma valores de transações do tipo SAÍDA com categoria de músicos
+        
+        IMPORTANTE: Suporta múltiplas convenções de nomenclatura definidas em MUSICIAN_PAYOUT_CATEGORIES
         
         Args:
             transactions_df: DataFrame de transações filtrado
@@ -207,10 +303,10 @@ class FinancialMetrics:
         if transactions_df.empty:
             return 0.0
         
-        # Filtrar cachês de músicos
+        # Filtrar cachês de músicos (suporta múltiplas nomenclaturas)
         cache_musicos = transactions_df[
             (transactions_df['tipo'] == 'SAIDA') & 
-            (transactions_df['categoria'] == 'CACHÊS-MÚSICOS') &
+            (transactions_df['categoria'].isin(MUSICIAN_PAYOUT_CATEGORIES)) &
             (transactions_df['payment_status'] == 'PAGO')
         ]
         
@@ -222,21 +318,25 @@ class FinancialMetrics:
     def _calculate_total_despesas(self, transactions_df: pd.DataFrame) -> float:
         """
         KPI 5: Total geral de despesas
-        Soma valores de todas as transações do tipo SAÍDA (exceto estornadas)
+        Soma valores de todas as transações do tipo SAÍDA com status PAGO
+        
+        IMPORTANTE: Alterado para considerar apenas despesas PAGAS (payment_status == 'PAGO')
+        para consistência com a regra de negócio documentada no README:
+        "Só entra em caixa: payment_status == PAGO"
         
         Args:
             transactions_df: DataFrame de transações filtrado
             
         Returns:
-            Valor total das despesas
+            Valor total das despesas pagas
         """
         if transactions_df.empty:
             return 0.0
         
-        # Filtrar despesas
+        # Filtrar despesas PAGAS (consistente com outras métricas)
         despesas = transactions_df[
             (transactions_df['tipo'] == 'SAIDA') & 
-            (transactions_df['payment_status'] != 'ESTORNADO')
+            (transactions_df['payment_status'] == 'PAGO')
         ]
         
         # Somar valores
@@ -608,13 +708,13 @@ def calculate_kpis_with_explanation(data: Dict[str, pd.DataFrame],
         'total_cache_musicos': {
             'valor': kpis['total_cache_musicos'],
             'explicacao': 'Total pago em cachês para músicos',
-            'formula': 'SUM(transactions[categoria=="CACHÊS-MÚSICOS" & payment_status=="PAGO"].valor)',
+            'formula': f'SUM(transactions[categoria IN {MUSICIAN_PAYOUT_CATEGORIES} & payment_status=="PAGO"].valor)',
             'unidade': 'R$'
         },
         'total_despesas': {
             'valor': kpis['total_despesas'],
-            'explicacao': 'Total de todas as despesas (exceto estornadas)',
-            'formula': 'SUM(transactions[tipo=="SAIDA" & payment_status!="ESTORNADO"].valor)',
+            'explicacao': 'Total de todas as despesas pagas',
+            'formula': 'SUM(transactions[tipo=="SAIDA" & payment_status=="PAGO"].valor)',
             'unidade': 'R$'
         },
         'caixa_atual': {
