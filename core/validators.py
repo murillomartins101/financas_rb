@@ -329,15 +329,12 @@ class DataValidator:
             return date_value
         
         if isinstance(date_value, str):
-            try:
-                formats = ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y']
-                for fmt in formats:
-                    try:
-                        return datetime.strptime(date_value, fmt)
-                    except ValueError:
-                        continue
-            except:
-                pass
+            formats = ['%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y']
+            for fmt in formats:
+                try:
+                    return datetime.strptime(date_value, fmt)
+                except ValueError:
+                    continue
         
         return None
     
