@@ -397,3 +397,6 @@ def main():
         )
     else:
         st.dataframe(shows_display, width='stretch', height=400)
+
+if __name__ == "__main__":
+    main()

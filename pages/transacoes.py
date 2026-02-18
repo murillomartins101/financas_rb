@@ -54,3 +54,5 @@ def main():
         transacoes_display = transacoes_df.copy()
     
     st.dataframe(transacoes_display, width='stretch', height=400)
+if __name__ == "__main__":
+    main()

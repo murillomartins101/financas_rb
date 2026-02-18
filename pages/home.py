@@ -789,3 +789,6 @@ def main():
     if st.button("Atualizar Dados", width='stretch'):
         data_loader.load_all_data(force_refresh=True)
         st.rerun()
+
+if __name__ == "__main__":
+    main()

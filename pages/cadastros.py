@@ -605,3 +605,6 @@ def render_create_merchandising_form():
                 st.rerun()
             else:
                 st.error(validation_msg)
+
+if __name__ == "__main__":
+    main()

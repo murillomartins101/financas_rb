@@ -405,3 +405,6 @@ def main():
             <p style="color: {DARK_THEME['text_secondary']}; margin: 0.5rem 0 0 0;">{text}</p>
         </div>
         """, unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    main()
