@@ -225,16 +225,35 @@ class GoogleCloudManager:
                 # Método 2: Usar secrets.toml (recomendado para Streamlit Cloud)
                 if not creds_dict:
                     try:
-                        if "google_credentials" in st.secrets:
-                            self._log("Encontradas credenciais em st.secrets['google_credentials']")
-                            creds_dict = dict(st.secrets["google_credentials"])
-                            creds_source = "st.secrets (secrets.toml)"
-                            self._log("Credenciais carregadas do secrets.toml com sucesso")
+                        # Verificar se st.secrets existe e tem conteúdo
+                        secrets_available = hasattr(st, 'secrets') and len(st.secrets) > 0
+                        
+                        if secrets_available:
+                            self._log("Arquivo secrets.toml encontrado e carregado pelo Streamlit")
+                            
+                            # Verificar se contém a chave google_credentials
+                            if "google_credentials" in st.secrets:
+                                self._log("Encontradas credenciais em st.secrets['google_credentials']")
+                                creds_dict = dict(st.secrets["google_credentials"])
+                                creds_source = "st.secrets (secrets.toml)"
+                                self._log("Credenciais carregadas do secrets.toml com sucesso")
+                            else:
+                                # secrets.toml existe mas não tem google_credentials
+                                self._log(
+                                    "secrets.toml existe mas não contém a seção [google_credentials]",
+                                    "WARNING"
+                                )
+                                available_keys = list(st.secrets.keys())
+                                self._log(
+                                    f"Chaves disponíveis em secrets.toml: {', '.join(available_keys) if available_keys else 'nenhuma'}",
+                                    "INFO"
+                                )
+                        else:
+                            self._log("Arquivo secrets.toml não encontrado ou vazio", "INFO")
+                    except FileNotFoundError:
+                        self._log("Arquivo .streamlit/secrets.toml não existe", "INFO")
                     except Exception as e:
-                        # Secrets não encontrado é esperado durante desenvolvimento local
-                        self._log(f"Secrets.toml não disponível: {str(e)}", "INFO")
-                        # Não continue aqui, vá para o método 3
-                        pass
+                        self._log(f"Erro ao acessar st.secrets: {str(e)}", "WARNING")
                 
                 # Método 3: Variáveis de ambiente
                 if not creds_dict:
@@ -253,20 +272,46 @@ class GoogleCloudManager:
                 # Se ainda não tem credenciais, retornar erro
                 if not creds_dict:
                     self._log("Nenhuma fonte de credenciais encontrada", "ERROR")
-                    self._connection_error = (
-                        "❌ Credenciais do Google Cloud não configuradas.\n\n"
-                        "📋 Para configurar, escolha UMA das opções:\n\n"
-                        "1️⃣ Arquivo secrets.toml (RECOMENDADO):\n"
+                    
+                    # Construir mensagem de erro mais específica baseada no que foi tentado
+                    error_parts = ["❌ Credenciais do Google Cloud não configuradas.\n"]
+                    
+                    # Verificar se secrets.toml existe mas está incompleto
+                    try:
+                        if hasattr(st, 'secrets') and len(st.secrets) > 0:
+                            if "google_credentials" not in st.secrets:
+                                error_parts.append(
+                                    "⚠️  O arquivo .streamlit/secrets.toml existe, mas não contém a seção [google_credentials].\n"
+                                    "    Verifique se você copiou a estrutura completa do secrets.toml.example.\n"
+                                )
+                            if "spreadsheet_id" not in st.secrets:
+                                error_parts.append(
+                                    "⚠️  O arquivo .streamlit/secrets.toml não contém 'spreadsheet_id'.\n"
+                                )
+                    except:
+                        pass
+                    
+                    error_parts.append(
+                        "\n📋 Para configurar, escolha UMA das opções:\n\n"
+                        "1️⃣ Arquivo secrets.toml (RECOMENDADO para desenvolvimento local e Streamlit Cloud):\n"
                         "   • Copie: .streamlit/secrets.toml.example → .streamlit/secrets.toml\n"
-                        "   • Preencha com suas credenciais reais\n"
+                        "   • Preencha com suas credenciais reais da Service Account\n"
+                        "   • Inclua a seção [google_credentials] com TODOS os campos\n"
+                        "   • Adicione spreadsheet_id no topo do arquivo\n"
                         "   • Tutorial: docs/SETUP_GOOGLE_SHEETS.md\n\n"
-                        "2️⃣ Arquivo JSON local:\n"
+                        "2️⃣ Arquivo JSON local (alternativa para desenvolvimento):\n"
                         "   • Coloque google_credentials.json na raiz do projeto\n"
                         "   • Configure SPREADSHEET_ID como variável de ambiente\n\n"
-                        "3️⃣ Variável de ambiente:\n"
-                        "   • Configure GOOGLE_CREDENTIALS_JSON com o JSON completo\n\n"
-                        "📚 Ajuda: .streamlit/README.md | docs/TROUBLESHOOTING.md"
+                        "3️⃣ Variável de ambiente (para ambientes de CI/CD):\n"
+                        "   • Configure GOOGLE_CREDENTIALS_JSON com o JSON completo\n"
+                        "   • Configure SPREADSHEET_ID\n\n"
+                        "📚 Ajuda detalhada:\n"
+                        "   • Setup completo: docs/SETUP_GOOGLE_SHEETS.md\n"
+                        "   • Problemas comuns: docs/TROUBLESHOOTING.md\n"
+                        "   • Exemplo de estrutura: .streamlit/README.md"
                     )
+                    
+                    self._connection_error = "".join(error_parts)
                     logging.error("[GOOGLE_CLOUD] Credenciais não encontradas - nenhuma fonte configurada")
                     return False
                 
@@ -357,11 +402,41 @@ class GoogleCloudManager:
                     if spreadsheet_id:
                         self._log(f"spreadsheet_id encontrado em variável de ambiente")
                     else:
-                        self._log("spreadsheet_id não encontrado", "ERROR")
-                        self._connection_error = (
-                            "ID da planilha não configurado. "
-                            "Configure 'spreadsheet_id' em secrets.toml ou na variável de ambiente SPREADSHEET_ID"
+                        self._log("spreadsheet_id não encontrado em nenhuma fonte", "ERROR")
+                        
+                        # Mensagem de erro específica para spreadsheet_id ausente
+                        error_msg_parts = [
+                            "❌ ID da planilha (spreadsheet_id) não configurado.\n\n"
+                            "O spreadsheet_id é obrigatório e identifica qual planilha do Google Sheets será usada.\n\n"
+                        ]
+                        
+                        # Verificar se credentials foram encontrados em secrets.toml
+                        if creds_source == "st.secrets (secrets.toml)":
+                            error_msg_parts.append(
+                                "✅ Suas credenciais foram encontradas em .streamlit/secrets.toml\n"
+                                "❌ Mas falta a chave 'spreadsheet_id' nesse arquivo\n\n"
+                                "Para corrigir:\n"
+                                "1. Abra .streamlit/secrets.toml\n"
+                                "2. Adicione no INÍCIO do arquivo (antes de qualquer seção []):\n"
+                                '   spreadsheet_id = "SEU_ID_AQUI"\n\n'
+                                "3. Para encontrar o ID da sua planilha:\n"
+                                "   • Abra a planilha no Google Sheets\n"
+                                "   • Copie o ID da URL: docs.google.com/spreadsheets/d/SEU_ID_AQUI/edit\n"
+                            )
+                        else:
+                            error_msg_parts.append(
+                                "Configure o spreadsheet_id usando uma das opções:\n\n"
+                                "1️⃣ No arquivo secrets.toml (recomendado):\n"
+                                "   • Adicione no início: spreadsheet_id = \"SEU_ID_AQUI\"\n\n"
+                                "2️⃣ Variável de ambiente:\n"
+                                "   • export SPREADSHEET_ID=\"SEU_ID_AQUI\"\n\n"
+                            )
+                        
+                        error_msg_parts.append(
+                            "📚 Tutorial completo: docs/SETUP_GOOGLE_SHEETS.md"
                         )
+                        
+                        self._connection_error = "".join(error_msg_parts)
                         return False
                 
                 # Validar formato do spreadsheet_id

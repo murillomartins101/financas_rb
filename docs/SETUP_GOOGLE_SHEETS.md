@@ -213,6 +213,190 @@ streamlit run test_connection.py
 
 ---
 
+## 🌐 Deployment no Streamlit Cloud
+
+Após configurar as credenciais localmente, você pode fazer deploy do app no Streamlit Cloud.
+
+### Pré-requisitos
+
+- Código da aplicação em um repositório GitHub (público ou privado)
+- Arquivo `.streamlit/secrets.toml` configurado localmente (NÃO commitado)
+- Credenciais da Service Account funcionando localmente
+
+### Passo 1: Preparar o Repositório
+
+1. Certifique-se de que o arquivo `secrets.toml` **NÃO** está commitado:
+   ```bash
+   git status
+   # secrets.toml NÃO deve aparecer na lista
+   ```
+
+2. Verifique se o `.gitignore` contém:
+   ```
+   .streamlit/secrets.toml
+   google_credentials.json
+   ```
+
+3. Faça push do código para GitHub:
+   ```bash
+   git push origin main
+   ```
+
+### Passo 2: Fazer Deploy no Streamlit Cloud
+
+1. Acesse [share.streamlit.io](https://share.streamlit.io)
+
+2. Faça login com sua conta GitHub
+
+3. Clique em **"New app"**
+
+4. Configure o app:
+   - **Repository**: Selecione seu repositório
+   - **Branch**: main (ou a branch que você usa)
+   - **Main file path**: app.py
+
+5. Clique em **"Advanced settings"**
+
+### Passo 3: Configurar Secrets no Streamlit Cloud
+
+Esta é a parte **MAIS IMPORTANTE** do deployment! 🔥
+
+1. Na seção **Advanced settings**, vá para a aba **"Secrets"**
+
+2. Abra o arquivo `.streamlit/secrets.toml` local (o que você configurou)
+
+3. Copie **TODO** o conteúdo do arquivo
+
+4. Cole no campo de texto do Streamlit Cloud
+
+5. **IMPORTANTE**: Mantenha a **MESMA ESTRUTURA TOML**:
+   ```toml
+   # Deve estar exatamente assim:
+   spreadsheet_id = "seu_id_aqui"
+   
+   [google_credentials]
+   type = "service_account"
+   project_id = "..."
+   private_key_id = "..."
+   private_key = """-----BEGIN PRIVATE KEY-----
+   ...
+   -----END PRIVATE KEY-----
+   """
+   client_email = "..."
+   # ... outros campos
+   
+   [jwt]
+   secret_key = "..."
+   # ... outros campos
+   ```
+
+6. Clique em **"Save"**
+
+7. Clique em **"Deploy!"**
+
+### Passo 4: Verificar o Deploy
+
+1. Aguarde o build completar (2-5 minutos)
+
+2. O app será aberto automaticamente
+
+3. Teste a conexão com Google Sheets
+
+4. Se houver erros, veja os logs:
+   - Clique nos três pontinhos (...) → **"Manage app"** → **"Logs"**
+
+### Atualizando Secrets no Streamlit Cloud
+
+Se você precisar atualizar as credenciais depois do deploy:
+
+1. Acesse seu app em share.streamlit.io
+
+2. Clique em **Settings** → **Secrets**
+
+3. Edite o conteúdo
+
+4. Clique em **"Save"**
+
+5. O app será redeployed automaticamente
+
+### Troubleshooting no Streamlit Cloud
+
+#### ❌ Erro: "google_credentials not found"
+
+**Causa**: A seção `[google_credentials]` não está nos Secrets
+
+**Solução**:
+1. Acesse Settings → Secrets
+2. Certifique-se de ter a linha `[google_credentials]`
+3. E todos os campos abaixo dela
+4. Salve e aguarde o redeploy
+
+#### ❌ Erro: "spreadsheet_id not found"
+
+**Causa**: Falta o campo `spreadsheet_id` no início dos Secrets
+
+**Solução**:
+1. Acesse Settings → Secrets
+2. Adicione no INÍCIO (antes de qualquer `[]`):
+   ```toml
+   spreadsheet_id = "seu_id_aqui"
+   ```
+3. Salve e aguarde o redeploy
+
+#### ❌ Erro: "PERMISSION_DENIED"
+
+**Causa**: A planilha não está compartilhada com a Service Account
+
+**Solução**:
+1. A planilha deve ser compartilhada mesmo quando o app está na nuvem
+2. Compartilhe com o `client_email` da Service Account
+3. Dê permissão de "Editor"
+
+#### ❌ Erro: "Invalid TOML format"
+
+**Causa**: Os Secrets no Streamlit Cloud têm erro de sintaxe TOML
+
+**Solução**:
+1. Verifique se todas as aspas estão fechadas
+2. Verifique se o `private_key` está com aspas triplas (""")
+3. Não deixe campos vazios
+4. Copie novamente do seu `secrets.toml` local que funciona
+
+#### 📋 Ver Logs de Erro
+
+Para diagnosticar problemas no Streamlit Cloud:
+
+1. Clique nos três pontinhos (...) no canto superior direito
+2. Selecione **"Manage app"**
+3. Clique na aba **"Logs"**
+4. Procure por mensagens de erro relacionadas a credenciais
+5. Use os logs para identificar qual campo está faltando ou incorreto
+
+### Diferenças: Local vs Streamlit Cloud
+
+| Aspecto | Local | Streamlit Cloud |
+|---------|-------|-----------------|
+| Arquivo de config | `.streamlit/secrets.toml` | Settings → Secrets (interface web) |
+| Como é lido | `st.secrets` lê arquivo local | `st.secrets` lê do banco do Streamlit Cloud |
+| Formato | Arquivo TOML | String TOML (mesmo formato) |
+| Atualização | Editar arquivo e reiniciar app | Salvar Secrets (redeploy automático) |
+| Segurança | Protegido pelo `.gitignore` | Criptografado pelo Streamlit Cloud |
+
+### Boas Práticas para Streamlit Cloud
+
+✅ **Faça**:
+- Teste as credenciais localmente primeiro
+- Copie exatamente o conteúdo do `secrets.toml` local
+- Mantenha uma cópia segura das credenciais
+- Use senhas fortes no campo `jwt.secret_key`
+
+❌ **Não faça**:
+- Commitar o `secrets.toml` no Git
+- Compartilhar os Secrets publicamente
+- Usar credenciais de produção em apps de teste
+
+---
+
 ## 🔧 Troubleshooting
 
 ### Erro: "Credenciais do Google Cloud não configuradas"
