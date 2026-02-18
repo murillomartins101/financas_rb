@@ -14,6 +14,13 @@ import numpy as np
 from core.data_loader import data_loader
 from core.metrics import calculate_kpis_with_explanation
 from core.filters import DataFilter, display_current_filters
+from utils.calculation_utils import (
+    safe_percentage_change,
+    format_percentage_change,
+    is_reliable_trend,
+    calculate_margin_safely,
+    get_sparkline_values
+)
 
 DARK_THEME = {
     'bg_color': '#0d1117',
@@ -32,8 +39,8 @@ DARK_THEME = {
 
 def create_sparkline(values, color='#58a6ff', height=50):
     """Cria um mini grafico sparkline para os cards de KPI"""
-    if not values or len(values) < 2:
-        values = [0, 0, 0, 0, 0]
+    # Usar helper para garantir valores mínimos
+    values = get_sparkline_values(values if values else [], min_length=5, default_value=0.0)
     
     fig = go.Figure()
     
@@ -70,6 +77,11 @@ def render_kpi_card_with_sparkline(title, value, sparkline_data, delta=None, del
         delta_html = f'''<div style="color: {delta_color}; font-size: 0.85rem; margin-top: 4px;">
             {delta_display}
             <span style="color: {DARK_THEME['text_secondary']}; font-size: 0.75rem;"> {comparison_text}</span>
+        </div>'''
+    elif delta is None and comparison_period:
+        # Exibir indicador de dados insuficientes quando delta é None mas esperado
+        delta_html = f'''<div style="color: {DARK_THEME['text_secondary']}; font-size: 0.75rem; margin-top: 4px;">
+            <span style="opacity: 0.7;">Dados insuficientes para comparacao</span>
         </div>'''
     
     if isinstance(value, (int, float)):
@@ -465,30 +477,54 @@ def main():
     
     monthly_data = get_monthly_data(transactions_df)
     
-    entradas_trend = monthly_data['ENTRADA'].tolist() if not monthly_data.empty and 'ENTRADA' in monthly_data.columns else [0]
-    despesas_trend = monthly_data['SAIDA'].tolist() if not monthly_data.empty and 'SAIDA' in monthly_data.columns else [0]
-    saldo_trend = monthly_data['saldo'].tolist() if not monthly_data.empty and 'saldo' in monthly_data.columns else [0]
+    # Obter trends mensais com validação
+    entradas_trend = monthly_data['ENTRADA'].tolist() if not monthly_data.empty and 'ENTRADA' in monthly_data.columns else []
+    despesas_trend = monthly_data['SAIDA'].tolist() if not monthly_data.empty and 'SAIDA' in monthly_data.columns else []
+    saldo_trend = monthly_data['saldo'].tolist() if not monthly_data.empty and 'saldo' in monthly_data.columns else []
+    
+    # Calcular deltas de forma segura
+    delta_receitas = None
+    if is_reliable_trend(entradas_trend, min_values=2, min_value_threshold=1.0):
+        delta_receitas = safe_percentage_change(
+            entradas_trend[-1], 
+            entradas_trend[-2],
+            min_threshold=1.0,  # Considera não confiável se < R$ 1
+            cap_min=-100.0,
+            cap_max=1000.0
+        )
+    
+    delta_despesas = None
+    if is_reliable_trend(despesas_trend, min_values=2, min_value_threshold=1.0):
+        delta_despesas = safe_percentage_change(
+            despesas_trend[-1], 
+            despesas_trend[-2],
+            min_threshold=1.0,
+            cap_min=-100.0,
+            cap_max=1000.0
+        )
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        delta_receitas = ((entradas_trend[-1] - entradas_trend[-2]) / entradas_trend[-2] * 100) if len(entradas_trend) > 1 and entradas_trend[-2] != 0 else 0
         render_kpi_card_with_sparkline(
             "Total Receitas",
             total_entradas,
             entradas_trend,
             delta=delta_receitas,
-            color=DARK_THEME['accent_green']
+            delta_text=format_percentage_change(delta_receitas) if delta_receitas is not None else None,
+            color=DARK_THEME['accent_green'],
+            comparison_period="em relacao ao mes anterior"
         )
     
     with col2:
-        delta_despesas = ((despesas_trend[-1] - despesas_trend[-2]) / despesas_trend[-2] * 100) if len(despesas_trend) > 1 and despesas_trend[-2] != 0 else 0
         render_kpi_card_with_sparkline(
             "Total Despesas",
             total_despesas,
             despesas_trend,
             delta=delta_despesas,
-            color=DARK_THEME['accent_red']
+            delta_text=format_percentage_change(delta_despesas) if delta_despesas is not None else None,
+            color=DARK_THEME['accent_red'],
+            comparison_period="em relacao ao mes anterior"
         )
     
     with col3:
@@ -500,10 +536,20 @@ def main():
         )
     
     with col4:
-        margem = ((total_entradas - total_despesas) / total_entradas * 100) if total_entradas > 0 else 0
+        # Calcular margem de lucro de forma segura
+        margem = calculate_margin_safely(total_entradas, total_despesas, min_revenue_threshold=1.0)
+        
+        # Se margem não é confiável, mostrar valor alternativo
+        if margem is None:
+            margem_display = "N/A"
+            margem_value = 0
+        else:
+            margem_display = f"{margem:.1f}%"
+            margem_value = margem
+            
         render_kpi_card_with_sparkline(
             "Margem de Lucro",
-            f"{margem:.1f}%",
+            margem_display,
             saldo_trend,
             prefix='',
             color=DARK_THEME['accent_purple']
@@ -533,7 +579,10 @@ def main():
             custos_operacionais = despesas['valor'].sum()
     
     valor_efetivo = valor_bruto_shows - custos_operacionais
-    percentual_retido = (valor_efetivo / valor_bruto_shows * 100) if valor_bruto_shows > 0 else 0
+    
+    # Calcular percentual retido de forma segura
+    from utils.calculation_utils import safe_percentage
+    percentual_retido = safe_percentage(valor_efetivo, valor_bruto_shows, default=0.0, min_threshold=1.0)
     
     col_valor1, col_valor2, col_valor3 = st.columns(3)
     
@@ -726,7 +775,7 @@ def main():
         """, unsafe_allow_html=True)
         
         fig = create_gauge_chart(
-            min(margem, 100) if margem > 0 else 0,
+            min(margem_value, 100) if margem_value > 0 else 0,
             100,
             '',
             color=DARK_THEME['accent_cyan']
