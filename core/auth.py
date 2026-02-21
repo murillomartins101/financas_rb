@@ -1,117 +1,163 @@
-"""
-Módulo de autenticação e controle de acesso
-Implementa login simples (dev) + JWT opcional
-"""
-
+# financas_rb/core/auth.py
+import os
+import hmac
 import streamlit as st
-import hashlib
-import time
-from datetime import datetime, timedelta
-import jwt
+from typing import Any, Dict, Set
 
 
-def hash_password(password: str) -> str:
-    salt = st.secrets.get("auth_salt", "rockbuzz_salt_2024")
-    return hashlib.sha256(f"{password}{salt}".encode()).hexdigest()
-
-
-def validate_credentials(username: str, password: str) -> bool:
-    # DEV fallback (simples)
-    valid_users = {
-        "admin": "admin123",
-        "Murillo": "murillo123",
-        "Tay": "tay123",
-        "Everton": "everton123",
-        "Helio": "helio123",
-        "Kiko": "kiko123",
-        "Naldo": "naldo123",
-    }
-    if username in valid_users and valid_users[username] == password:
-        return True
-
-    # secrets.toml (opcional)
-    try:
-        credentials = st.secrets.get("credentials", {})
-        user_cred = credentials.get(username)
-        if user_cred:
-            stored_hash = user_cred.get("password_hash")
-            return stored_hash == hash_password(password)
-    except Exception:
-        pass
-
-    return False
-
-
-def create_auth_token(username: str) -> str:
-    payload = {"username": username, "exp": datetime.now() + timedelta(hours=8), "iat": datetime.now()}
-    secret = st.secrets.get("jwt_secret", "rockbuzz_jwt_secret_2024")
-    return jwt.encode(payload, secret, algorithm="HS256")
-
-
-def validate_token(token: str) -> bool:
-    try:
-        secret = st.secrets.get("jwt_secret", "rockbuzz_jwt_secret_2024")
-        jwt.decode(token, secret, algorithms=["HS256"])
-        return True
-    except Exception:
-        return False
-
-
-def get_user_role(username: str) -> str:
-    credentials = st.secrets.get("credentials", {})
-    user_cred = credentials.get(username, {})
-    return user_cred.get("role", "membro")
-
-
-def init_session_state():
+# =========================
+# Sessão / Estado
+# =========================
+def init_session_state() -> None:
+    """
+    Inicializa chaves necessárias no st.session_state.
+    Mantém compatibilidade com app.py e páginas.
+    """
     defaults = {
         "authenticated": False,
-        "user_name": None,
-        "user_role": "membro",
-        "auth_token": None,
-        "login_time": None,
-        "current_page": "Home",
-        "data_cache": {},
-        "last_cache_update": None,
-        "filter_period": "Todo período",
-        "filter_start_date": None,
-        "filter_end_date": None,
+        "user": None,                 # ex: {"username": "admin", "is_admin": True}
+        "permissions": None,          # ex: {"*", "cadastros:view"}
     }
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
 
 
+def is_logged_in() -> bool:
+    return bool(st.session_state.get("authenticated"))
+
+
+def logout() -> None:
+    """
+    Faz logout limpando o essencial.
+    """
+    st.session_state["authenticated"] = False
+    st.session_state["user"] = None
+    st.session_state["permissions"] = None
+
+
+# =========================
+# Auth (senha)
+# =========================
+def _get_admin_password() -> str:
+    """
+    Busca senha do admin de forma compatível com:
+      - st.secrets["auth"]["password"]
+      - st.secrets["PASSWORD"]
+      - env var PASSWORD
+      - env var ADMIN_PASSWORD
+    """
+    # secrets.toml recomendado:
+    # [auth]
+    # password="SUA_SENHA"
+    try:
+        if "auth" in st.secrets and "password" in st.secrets["auth"]:
+            return str(st.secrets["auth"]["password"])
+    except Exception:
+        pass
+
+    try:
+        if "PASSWORD" in st.secrets:
+            return str(st.secrets["PASSWORD"])
+    except Exception:
+        pass
+
+    return os.getenv("ADMIN_PASSWORD") or os.getenv("PASSWORD") or ""
+
+
+def _constant_time_equals(a: str, b: str) -> bool:
+    """
+    Comparação em tempo constante (evita timing attack bobo).
+    """
+    return hmac.compare_digest(a.encode("utf-8"), b.encode("utf-8"))
+
+
 def check_password() -> bool:
-    if st.session_state.get("authenticated", False):
-        token = st.session_state.get("auth_token")
-        if token and validate_token(token):
-            return True
+    """
+    Tela de login simples (Streamlit).
+    Retorna True se usuário autenticado.
 
-    st.title("🔐 Rockbuzz Finance - Login")
+    Compatível com app.py que chama:
+      from core.auth import check_password, init_session_state
+    """
+    init_session_state()
 
-    with st.form("login_form"):
-        username = st.text_input("Usuário", key="login_username")
-        password = st.text_input("Senha", type="password", key="login_password")
-        submit = st.form_submit_button("Entrar")
+    if st.session_state.get("authenticated"):
+        return True
 
-        if submit:
-            if validate_credentials(username, password):
-                st.session_state.authenticated = True
-                st.session_state.auth_token = create_auth_token(username)
-                st.session_state.user_name = username
-                st.session_state.user_role = get_user_role(username)
-                st.session_state.login_time = datetime.now()
-                st.success(f"Bem-vindo, {username}!")
-                time.sleep(0.6)
-                st.rerun()
-            else:
-                st.error("Credenciais inválidas!")
+    admin_password = _get_admin_password()
+    if not admin_password:
+        st.error(
+            "Senha não configurada.\n\n"
+            "Configure em `.streamlit/secrets.toml`:\n"
+            "[auth]\npassword = \"...\"\n"
+            "ou defina env var ADMIN_PASSWORD."
+        )
+        return False
 
-    return False
+    st.markdown("### Login")
+    with st.form("login_form", clear_on_submit=False):
+        username = st.text_input("Usuário", value="admin")
+        password = st.text_input("Senha", type="password")
+        submitted = st.form_submit_button("Entrar")
+
+    if submitted:
+        if _constant_time_equals(password, admin_password):
+            st.session_state["authenticated"] = True
+            st.session_state["user"] = {"username": username, "is_admin": (username == "admin")}
+            # permissões default: admin = tudo
+            st.session_state["permissions"] = {"*"} if username == "admin" else set()
+            st.success("Login realizado.")
+            st.rerun()
+        else:
+            st.error("Usuário ou senha inválidos.")
+            st.session_state["authenticated"] = False
+            return False
+
+    return st.session_state.get("authenticated", False)
 
 
-def logout():
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.rerun()
+# =========================
+# Permissões
+# =========================
+def _get_permissions() -> Set[str]:
+    perms = st.session_state.get("permissions")
+
+    if perms is None:
+        user = st.session_state.get("user") or {}
+        if user.get("is_admin") is True or user.get("username") == "admin":
+            return {"*"}
+        return set()
+
+    if isinstance(perms, set):
+        return perms
+    if isinstance(perms, (list, tuple)):
+        return set(perms)
+    if isinstance(perms, str):
+        return {perms}
+
+    return set()
+
+
+def check_permission(permission: str, *, fail_silently: bool = False) -> bool:
+    """
+    Verifica permissão.
+    Regra: "*" libera tudo.
+    """
+    perms = _get_permissions()
+    ok = ("*" in perms) or (permission in perms)
+
+    if (not ok) and (not fail_silently):
+        st.error("Você não tem permissão para acessar esta área.")
+    return ok
+
+
+def require_permission(permission: str) -> None:
+    if not check_permission(permission):
+        st.stop()
+
+
+def require_login() -> None:
+    if not is_logged_in():
+        st.error("Sessão expirada. Faça login novamente.")
+        st.stop()

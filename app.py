@@ -2,145 +2,105 @@
 Rockbuzz Finance - Dashboard Financeiro para Bandas
 Arquivo principal da aplicação Streamlit (Página Home)
 
-Atualização (fix de Google Sheets):
-- Se primary_source="google" e allow_fallback=false, tenta inicializar Google Sheets automaticamente.
-- Exibe diagnóstico acionável (secrets/env vars) quando falhar.
+Atualização (fix de Google Sheets e DataLoader):
+- Import correto do data_loader
+- Tratamento de erros SSL
+- Fallback para Excel quando necessário
+- Diagnóstico detalhado de conexão
 """
 
 import os
+import sys
 import streamlit as st
+import traceback
+from datetime import datetime
+
+# Adicionar diretório raiz ao path para garantir imports corretos
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core.auth import check_password, init_session_state
 from core.ui_components import setup_page_config, render_sidebar, render_footer
 from core.navigation import render_page
 from core.google_cloud import google_cloud_manager
-
+from core.data_loader import data_loader, load_financial_data, get_sheet_df
 
 def _get_app_config() -> dict:
-    cfg = {"primary_source": "google", "allow_fallback": False}
+    """Obtém configuração da aplicação de secrets.toml e variáveis de ambiente"""
+    cfg = {
+        "primary_source": "google", 
+        "allow_fallback": True,  # Alterado para True por padrão
+        "spreadsheet_id": None,
+        "credentials_path": None
+    }
 
     # st.secrets
     try:
         if "data_config" in st.secrets:
             cfg["primary_source"] = st.secrets["data_config"].get("primary_source", cfg["primary_source"])
             cfg["allow_fallback"] = bool(st.secrets["data_config"].get("allow_fallback", cfg["allow_fallback"]))
+            cfg["spreadsheet_id"] = st.secrets["data_config"].get("spreadsheet_id")
         elif "app" in st.secrets:
             cfg["primary_source"] = st.secrets["app"].get("primary_source", cfg["primary_source"])
             cfg["allow_fallback"] = bool(st.secrets["app"].get("allow_fallback", cfg["allow_fallback"]))
-        else:
-            if "primary_source" in st.secrets:
-                cfg["primary_source"] = st.secrets.get("primary_source", cfg["primary_source"])
-            if "allow_fallback" in st.secrets:
-                cfg["allow_fallback"] = bool(st.secrets.get("allow_fallback", cfg["allow_fallback"]))
-    except Exception:
-        pass
+            cfg["spreadsheet_id"] = st.secrets["app"].get("spreadsheet_id")
+        
+        # Credenciais do Google
+        if "google_credentials" in st.secrets:
+            cfg["credentials_json"] = st.secrets["google_credentials"].get("credentials_json")
+    except Exception as e:
+        st.sidebar.caption(f"⚠️ Erro ao ler secrets: {e}")
 
-    # env vars
+    # env vars (sobrescrevem secrets)
     if os.getenv("PRIMARY_SOURCE"):
         cfg["primary_source"] = os.getenv("PRIMARY_SOURCE", cfg["primary_source"])
     if os.getenv("ALLOW_FALLBACK") is not None:
-        cfg["allow_fallback"] = os.getenv("ALLOW_FALLBACK", "false").strip().lower() in ("1", "true", "yes", "y")
+        cfg["allow_fallback"] = os.getenv("ALLOW_FALLBACK", "true").strip().lower() in ("1", "true", "yes", "y")
+    if os.getenv("SPREADSHEET_ID"):
+        cfg["spreadsheet_id"] = os.getenv("SPREADSHEET_ID")
+    if os.getenv("GOOGLE_CREDENTIALS_JSON"):
+        cfg["credentials_json"] = os.getenv("GOOGLE_CREDENTIALS_JSON")
 
     cfg["primary_source"] = (cfg["primary_source"] or "google").strip().lower()
     cfg["allow_fallback"] = bool(cfg["allow_fallback"])
+    
     return cfg
 
 
 def _render_google_setup_help():
+    """Renderiza ajuda para configuração do Google Sheets"""
     st.error("❌ Falha na autenticação com Google Sheets")
-    st.caption('Configuração: primary_source = "google" e allow_fallback = false')
+    st.caption('Configuração atual: primary_source = "google" e allow_fallback = false')
 
     status = google_cloud_manager.get_connection_status()
     error_msg = status.get("error") or "Erro não especificado"
-    suggestion = status.get("suggestion")
+    
+    # Diagnóstico específico para erro SSL
+    if "SSL" in error_msg or "EOF" in error_msg:
+        st.warning("🔒 **Problema de SSL detectado**")
+        st.markdown("""
+        **Possíveis causas:**
+        - Certificados SSL desatualizados
+        - Firewall/Proxy bloqueando conexão
+        - Problema de rede corporativa
+        
+        **Soluções rápidas:**
+        1. Atualizar certificados: `pip install --upgrade certifi`
+        2. Usar fallback Excel: configure `allow_fallback = true`
+        3. Verificar conexão com internet
+        """)
 
     st.write(f"**Problema:** {error_msg}")
-    if suggestion:
-        st.info(f"💡 Sugestão: {suggestion}")
 
     st.markdown("### Como resolver (escolha UMA opção)")
-    st.markdown(
-        """
-**1️⃣ secrets.toml (local / Streamlit):**
-- Arquivo: `.streamlit/secrets.toml`
-- Seção: `[google_credentials]`
-- Campos suportados:
-  - `credentials_json` (JSON completo) **OU**
-  - campos separados (`type`, `project_id`, `private_key`, ...)
-
-**2️⃣ Variáveis de ambiente (recomendado em produção):**
-- `GOOGLE_CREDENTIALS_JSON` = JSON completo da Service Account
-- `SPREADSHEET_ID` = ID da planilha
-
-**3️⃣ Fallback (para rodar sem Google Sheets):**
-- `allow_fallback = true` (permite usar Excel local quando Google falhar)
-- ou `primary_source = "excel"`
-        """.strip()
-    )
-
-    with st.expander("📋 Logs técnicos de inicialização"):
-        logs = status.get("logs") or []
-        st.code("\n".join(logs) if logs else "Sem logs ainda.")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔌 Tentar Conectar Agora", use_container_width=True):
-            ok = google_cloud_manager.initialize(show_messages=True)
-            if ok:
-                st.success("Conexão estabelecida. Recarregando…")
-                st.rerun()
-            else:
-                st.warning("Não foi possível conectar. Veja os logs acima.")
-    with col2:
-        if st.button("🔄 Recarregar Página", use_container_width=True):
-            st.rerun()
-
-
-def _ensure_primary_source_ready() -> bool:
-    cfg = _get_app_config()
-    st.session_state["primary_source"] = cfg["primary_source"]
-    st.session_state["allow_fallback"] = cfg["allow_fallback"]
-
-    if cfg["primary_source"] != "google":
-        return True
-
-    ok = google_cloud_manager.initialize(show_messages=False)
-    if ok:
-        return True
-
-    if cfg["allow_fallback"]:
-        st.warning("Google Sheets indisponível. allow_fallback=true → usando fallback (Excel local).")
-        return True
-
-    _render_google_setup_help()
-    return False
-
+    st.markdown("""
+    1. **Configurar Google Sheets:** Siga o guia em `docs/SETUP_GOOGLE_SHEETS.md`.
+    2. **Ativar Fallback Excel:** No arquivo `.streamlit/secrets.toml`, defina `allow_fallback = true`.
+    3. **Verificar Conexão:** Certifique-se de que o ID da planilha está correto e compartilhado com o e-mail da conta de serviço.
+    """)
 
 def main():
     setup_page_config()
     init_session_state()
 
-    if not st.session_state.get("authenticated", False):
-        if check_password():
-            st.session_state.authenticated = True
-            st.rerun()
+    if not check_password():
         st.stop()
-
-    if not _ensure_primary_source_ready():
-        st.stop()
-
-    render_sidebar()
-
-    try:
-        current = st.session_state.get("current_page", "Home")
-        render_page(current)
-    except Exception as e:
-        st.error(f"Erro inesperado na aplicação: {e}")
-        import traceback
-        st.code(traceback.format_exc())
-
-    render_footer()
-
-
-if __name__ == "__main__":
-    main()

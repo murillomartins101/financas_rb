@@ -5,6 +5,7 @@ Centralizes page rendering functions to avoid circular imports
 FIX:
 - Loader de análises tenta vários nomes possíveis.
 - Prioriza pages/analises.py (nome "normal" e estável).
+- _call_page_main agora trata ImportError com mensagem mais clara.
 """
 
 import streamlit as st
@@ -81,6 +82,12 @@ def _call_page_main(page_module_path: str, **kwargs):
             f"Página não encontrada: {page_module_path}. "
             f"Verifique se existe o arquivo em {_pages_dir()} e se o nome está correto."
         ) from e
+    except ImportError as e:
+        # Captura casos como: cannot import name 'check_permission' from 'core.auth'
+        raise ImportError(
+            f"Falha ao importar dependências da página '{page_module_path}'. "
+            f"Erro original: {e}"
+        ) from e
 
     if not hasattr(mod, "main"):
         raise AttributeError(f"Módulo {page_module_path} não tem função main()")
@@ -130,7 +137,10 @@ def show_cadastros_page(data=None):
     mas funciona mesmo sem.
     """
     try:
-        _call_page_main("pages.cadastros", data=data) if data is not None else _call_page_main("pages.cadastros")
+        if data is not None:
+            _call_page_main("pages.cadastros", data=data)
+        else:
+            _call_page_main("pages.cadastros")
     except Exception as e:
         st.error(f"Erro ao carregar página de Cadastros: {str(e)}")
         import traceback
